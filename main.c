@@ -11,7 +11,9 @@
 #include <stdint.h>
 
 void setLEDs(uint8_t);
-void setPins(uint8_t value);
+void setTime(uint8_t minute, uint8_t hour);
+
+const uint8_t buttons = (1 << PD0) | (1 << PD1) | (1 << PD2); 
 /////////////////////////////////////////////////////////////////////////////////
 // 2 Möglichkeiten:
 
@@ -21,28 +23,28 @@ typedef struct{
 	uint8_t pin;
 } Pin;
 // Deklarieren Sie Ihre Pins
-const Pin pins[] = {
-	{&PORTC, PD7},  // Beispiel: PORTD, Pin D1
-	{&PORTC, PD6},  // Beispiel: PORTD, Pin D3
-	{&PORTC, PD5},  // Beispiel: PORTD, Pin D0
-	{&PORTC, PC4},   // Beispiel: PORTC, Pin C4
-	{&PORTC, PD3},
-	{&PORTC, PC2},
+const Pin minLedPins[] = {
+	{&PORTB, PB2},
+	{&PORTB, PB1},
+	{&PORTC, PC0},
 	{&PORTC, PC1},
-	{&PORTC, PD0}
+	{&PORTC, PC2},
+	{&PORTC, PC3}
 		
 };
 
-const size_t numPins = sizeof(pins);
+const size_t numMinLedPins = sizeof(minLedPins);
 
+const Pin hourLedPins[] = {
+	{&PORTB, PB0},
+	{&PORTD, PD7},
+	{&PORTD, PD6},
+	{&PORTC, PC5},
+	{&PORTC, PC4}
+	
+};
 
-// Oder so:---------------------------------------------------------------
-
-const uint8_t minPortOrder[] = {&PORTD, &PORTD, &PORTD, &PORTD, &PORTD, &PORTD};
-const uint8_t minPinOrder[] = {PIND1, PIND4, PIND3, PIND0, PIND2, PIND5};
-const uint8_t hourPortOrder[] = {PIND1, PIND4, PIND3, PIND0, PIND2, PIND5};
-const uint8_t hourPinOrder[] = {PIND1, PIND4, PIND3, PIND0, PIND2, PIND5};
-////////////////////////////////////////////////////////////////////////////
+const size_t numHourLedPins = sizeof(hourLedPins);
 
 int main(void)
 {
@@ -50,15 +52,18 @@ int main(void)
 	//ASSR |= 0b00100000;
 	
 	// Setze alle Pins von Port C als Ausgänge
-	DDRC = 0xFF;
+	DDRC = 0b00111111;
+	DDRD = 0b11000000;
+	DDRB = 0b00000111;
+	
 	
 	// Aktiviere Pull-Up-Widerstände für die Taster
-	PORTD |= (1 << PD0) | (1 << PD1) | (1 << PD2); 
+	PORTD |= buttons;
 
 	uint8_t counter = 0;
 	while (1)
 	{
-		if (!(PIND & (1 << PIND2))) // Überprüfe den Zustand des Tasters an PD1
+		if ((PIND & (1 << PIND2))) // Überprüfe den Zustand des Tasters an PD1
 		{
 			_delay_ms(200);
 			counter++;
@@ -70,7 +75,7 @@ int main(void)
 		}
 
 		//setLEDs(0b00111111);
-		setPins(counter);
+		setTime(counter, counter);
 		
 	}
 }
@@ -83,14 +88,28 @@ void setLEDs(uint8_t i)
 	_delay_ms(5);
 }
 
-void setPins(uint8_t value) {
-	for (size_t i = 0; i < numPins; ++i) {
-		if (value & (1 << i)) {
-			*(pins[i].port) |= (1 << pins[i].pin);  // Pin setzen
+void setTime(uint8_t minute, uint8_t hour) {
+	//Set Minute
+	for (size_t i = 0; i < numMinLedPins; ++i) {
+		if (minute & (1 << i)) {
+			*(minLedPins[i].port) |= (1 << minLedPins[i].pin);
 			} else {
-			*(pins[i].port) &= ~(1 << pins[i].pin); // Pin löschen
+			*(minLedPins[i].port) &= ~(1 << minLedPins[i].pin);
 		}
 	}
+	//Set Hour
+	for (size_t i = 0; i < numHourLedPins; ++i) {
+		if (hour & (1 << i)) {
+			*(hourLedPins[i].port) |= (1 << hourLedPins[i].pin);  
+			} else {
+			*(hourLedPins[i].port) &= ~(1 << hourLedPins[i].pin);
+		}
+	}
+	_delay_us(380);
+	PORTC = 0b00000000;
+	PORTD &= buttons; // |= 0b00000111;
+	PORTB = 0;
+	_delay_ms(550);
 }
 
 /*
