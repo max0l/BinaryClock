@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <avr/interrupt.h>
 
+#define DEBOUNCE_COUNT 2
 // Initialise Hour and Minute counter
 volatile uint8_t hour = 0;
 volatile uint8_t minute = 0;
@@ -34,18 +35,18 @@ const Pin minLedPins[] = {
 		
 };
 
-const size_t numMinLedPins = sizeof(minLedPins);
+const size_t numMinLedPins = sizeof(minLedPins) / sizeof(minLedPins[0]);
 
 const Pin hourLedPins[] = {
 	{&PORTB, PB0},
 	{&PORTD, PD7},
 	{&PORTD, PD6},
-	{&PORTC, PC4},
-	{&PORTC, PC5}
+	{&PORTC, PC5},
+	{&PORTC, PC4}
 	
 };
 
-const size_t numHourLedPins = sizeof(hourLedPins);
+const size_t numHourLedPins = sizeof(hourLedPins) / sizeof(hourLedPins[0]);
 
 int main(void)
 {
@@ -63,7 +64,7 @@ int main(void)
 	PORTD |= buttons;
 	
 	//Trigger bei IO Chnage bei INT0
-	EICRA |= (1<<ISC00) | (1<<ISC00);
+	EICRA |= (1<<ISC01) | (1<<ISC00);
 	
 	//Enable Interrupt
 	EIMSK |= (1<<INT0);
@@ -97,8 +98,10 @@ int main(void)
 		
 	}
 }
+
+
 ISR(INT0_vect){
-	_delay_ms(100);
+	_delay_us(20);
 	minute++;
 	if(minute==5) {
 		minute = 0;
@@ -107,8 +110,10 @@ ISR(INT0_vect){
 			hour = 0;
 		}
 	}
+	
 
 }
+
 
 /*
 #include <avr/io.h>
