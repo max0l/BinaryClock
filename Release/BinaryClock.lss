@@ -3,49 +3,49 @@ BinaryClock.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .data         00000000  00800100  00800100  00000306  2**0
+  0 .data         00000000  00800100  00800100  000002fc  2**0
                   ALLOC, LOAD, DATA
   1 .text         0000008a  00000000  00000000  00000094  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  2 .comment      0000002f  00000000  00000000  00000306  2**0
+  2 .comment      0000002f  00000000  00000000  000002fc  2**0
                   CONTENTS, READONLY
-  3 .stack.descriptors.hdr 0000001c  00000000  00000000  00000335  2**0
+  3 .stack.descriptors.hdr 0000001c  00000000  00000000  0000032b  2**0
                   CONTENTS, READONLY
-  4 .debug_info   000005f4  00000000  00000000  00000351  2**0
+  4 .debug_info   000005f4  00000000  00000000  00000347  2**0
                   CONTENTS, READONLY, DEBUGGING
-  5 .debug_abbrev 000005a2  00000000  00000000  00000945  2**0
+  5 .debug_abbrev 000005a2  00000000  00000000  0000093b  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_line   00000137  00000000  00000000  00000ee7  2**0
+  6 .debug_line   00000137  00000000  00000000  00000edd  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_str    00000209  00000000  00000000  0000101e  2**0
+  7 .debug_str    00000209  00000000  00000000  00001014  2**0
                   CONTENTS, READONLY, DEBUGGING
   8 .text         00000002  0000008a  0000008a  0000011e  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  9 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00001228  2**2
+  9 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00001220  2**2
                   CONTENTS, READONLY, DEBUGGING
  10 .text.startup.main 00000142  0000008c  0000008c  00000120  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
- 11 .text.__vector_1 0000005c  000001ce  000001ce  00000262  2**1
+ 11 .text.__vector_1 00000052  000001ce  000001ce  00000262  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
- 12 .progmemx.data.hourLedPins 0000000f  0000022a  0000022a  000002be  2**0
+ 12 .progmemx.data.hourLedPins 0000000f  00000220  00000220  000002b4  2**0
                   CONTENTS, ALLOC, LOAD, READONLY, PROGMEMX
- 13 .progmemx.data.minLedPins 00000012  00000239  00000239  000002cd  2**0
+ 13 .progmemx.data.minLedPins 00000012  0000022f  0000022f  000002c3  2**0
                   CONTENTS, ALLOC, LOAD, READONLY, PROGMEMX
- 14 .bss.minute   00000001  00800100  00800100  00000306  2**0
+ 14 .bss.minute   00000001  00800100  00800100  000002fc  2**0
                   ALLOC
- 15 .bss.hour     00000001  00800101  00800101  00000306  2**0
+ 15 .bss.hour     00000001  00800101  00800101  000002fc  2**0
                   ALLOC
- 16 .text.libgcc  00000011  0000024b  0000024b  000002df  2**1
+ 16 .text.libgcc  00000011  00000241  00000241  000002d5  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
- 17 .text.__dummy_fini 00000002  0000025c  0000025c  000002f0  2**1
+ 17 .text.__dummy_fini 00000002  00000252  00000252  000002e6  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
- 18 .text.__dummy_funcs_on_exit 00000002  0000025e  0000025e  000002f2  2**1
+ 18 .text.__dummy_funcs_on_exit 00000002  00000254  00000254  000002e8  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
- 19 .text.__dummy_simulator_exit 00000002  00000260  00000260  000002f4  2**1
+ 19 .text.__dummy_simulator_exit 00000002  00000256  00000256  000002ea  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
- 20 .text.exit    0000000e  00000262  00000262  000002f6  2**1
+ 20 .text.exit    0000000e  00000258  00000258  000002ec  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
- 21 .text._Exit   00000002  00000270  00000270  00000304  2**1
+ 21 .text._Exit   00000002  00000266  00000266  000002fa  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
 
 Disassembly of section .text:
@@ -125,7 +125,7 @@ Disassembly of section .text:
   7e:	f4 07       	cpc	r31, r20
   80:	31 f7       	brne	.-52     	; 0x4e <__do_copy_data+0x8>
   82:	04 d0       	rcall	.+8      	; 0x8c <main>
-  84:	ee c0       	rjmp	.+476    	; 0x262 <exit>
+  84:	e9 c0       	rjmp	.+466    	; 0x258 <exit>
 
 00000086 <_exit>:
   86:	f8 94       	cli
@@ -151,7 +151,7 @@ Disassembly of section .text.startup.main:
   9a:	87 60       	ori	r24, 0x07	; 7
   9c:	8b b9       	out	0x0b, r24	; 11
   9e:	80 91 69 00 	lds	r24, 0x0069	; 0x800069 <__TEXT_REGION_LENGTH__+0x7ff069>
-  a2:	81 60       	ori	r24, 0x01	; 1
+  a2:	83 60       	ori	r24, 0x03	; 3
   a4:	80 93 69 00 	sts	0x0069, r24	; 0x800069 <__TEXT_REGION_LENGTH__+0x7ff069>
   a8:	e8 9a       	sbi	0x1d, 0	; 29
   aa:	78 94       	sei
@@ -171,7 +171,7 @@ Disassembly of section .text.startup.main:
   c6:	9e e1       	ldi	r25, 0x1E	; 30
   c8:	9a 95       	dec	r25
   ca:	f1 f7       	brne	.-4      	; 0xc8 <main+0x3c>
-  cc:	29 e3       	ldi	r18, 0x39	; 57
+  cc:	2f e2       	ldi	r18, 0x2F	; 47
   ce:	32 e0       	ldi	r19, 0x02	; 2
   d0:	40 e0       	ldi	r20, 0x00	; 0
   d2:	52 e0       	ldi	r21, 0x02	; 2
@@ -192,12 +192,12 @@ Disassembly of section .text.startup.main:
   f0:	2d 5f       	subi	r18, 0xFD	; 253
   f2:	3f 4f       	sbci	r19, 0xFF	; 255
   f4:	4f 4f       	sbci	r20, 0xFF	; 255
-  f6:	c2 31       	cpi	r28, 0x12	; 18
+  f6:	c6 30       	cpi	r28, 0x06	; 6
   f8:	d1 05       	cpc	r29, r1
   fa:	59 f1       	breq	.+86     	; 0x152 <__EEPROM_REGION_LENGTH__+0x52>
   fc:	f9 01       	movw	r30, r18
   fe:	54 2f       	mov	r21, r20
- 100:	a5 d0       	rcall	.+330    	; 0x24c <__xload_2>
+ 100:	a0 d0       	rcall	.+320    	; 0x242 <__xload_2>
  102:	69 01       	movw	r12, r18
  104:	e4 2e       	mov	r14, r20
  106:	f2 e0       	ldi	r31, 0x02	; 2
@@ -234,10 +234,10 @@ Disassembly of section .text.startup.main:
  146:	2d 5f       	subi	r18, 0xFD	; 253
  148:	3f 4f       	sbci	r19, 0xFF	; 255
  14a:	4f 4f       	sbci	r20, 0xFF	; 255
- 14c:	c2 31       	cpi	r28, 0x12	; 18
+ 14c:	c6 30       	cpi	r28, 0x06	; 6
  14e:	d1 05       	cpc	r29, r1
  150:	a9 f6       	brne	.-86     	; 0xfc <main+0x70>
- 152:	2a e2       	ldi	r18, 0x2A	; 42
+ 152:	20 e2       	ldi	r18, 0x20	; 32
  154:	32 e0       	ldi	r19, 0x02	; 2
  156:	40 e0       	ldi	r20, 0x00	; 0
  158:	50 e0       	ldi	r21, 0x00	; 0
@@ -245,47 +245,47 @@ Disassembly of section .text.startup.main:
  15c:	70 e0       	ldi	r23, 0x00	; 0
  15e:	c0 e0       	ldi	r28, 0x00	; 0
  160:	d0 e0       	ldi	r29, 0x00	; 0
- 162:	1d c0       	rjmp	.+58     	; 0x19e <__EEPROM_REGION_LENGTH__+0x9e>
- 164:	e0 80       	ld	r14, Z
- 166:	cd 01       	movw	r24, r26
- 168:	01 c0       	rjmp	.+2      	; 0x16c <__EEPROM_REGION_LENGTH__+0x6c>
- 16a:	88 0f       	add	r24, r24
- 16c:	5a 95       	dec	r21
- 16e:	ea f7       	brpl	.-6      	; 0x16a <__EEPROM_REGION_LENGTH__+0x6a>
- 170:	8e 29       	or	r24, r14
- 172:	80 83       	st	Z, r24
- 174:	21 96       	adiw	r28, 0x01	; 1
- 176:	2d 5f       	subi	r18, 0xFD	; 253
- 178:	3f 4f       	sbci	r19, 0xFF	; 255
- 17a:	4f 4f       	sbci	r20, 0xFF	; 255
- 17c:	cf 30       	cpi	r28, 0x0F	; 15
- 17e:	d1 05       	cpc	r29, r1
- 180:	09 f4       	brne	.+2      	; 0x184 <__EEPROM_REGION_LENGTH__+0x84>
- 182:	96 cf       	rjmp	.-212    	; 0xb0 <main+0x24>
- 184:	f9 01       	movw	r30, r18
- 186:	54 2f       	mov	r21, r20
- 188:	61 d0       	rcall	.+194    	; 0x24c <__xload_2>
- 18a:	69 01       	movw	r12, r18
- 18c:	e4 2e       	mov	r14, r20
- 18e:	f2 e0       	ldi	r31, 0x02	; 2
- 190:	cf 0e       	add	r12, r31
- 192:	d1 1c       	adc	r13, r1
- 194:	e1 1c       	adc	r14, r1
- 196:	f6 01       	movw	r30, r12
- 198:	54 91       	lpm	r21, Z
- 19a:	e7 fc       	sbrc	r14, 7
- 19c:	50 81       	ld	r21, Z
- 19e:	80 91 01 01 	lds	r24, 0x0101	; 0x800101 <hour>
- 1a2:	90 e0       	ldi	r25, 0x00	; 0
- 1a4:	0c 2e       	mov	r0, r28
- 1a6:	02 c0       	rjmp	.+4      	; 0x1ac <__EEPROM_REGION_LENGTH__+0xac>
- 1a8:	95 95       	asr	r25
- 1aa:	87 95       	ror	r24
- 1ac:	0a 94       	dec	r0
- 1ae:	e2 f7       	brpl	.-8      	; 0x1a8 <__EEPROM_REGION_LENGTH__+0xa8>
- 1b0:	fb 01       	movw	r30, r22
- 1b2:	80 fd       	sbrc	r24, 0
- 1b4:	d7 cf       	rjmp	.-82     	; 0x164 <__EEPROM_REGION_LENGTH__+0x64>
+ 162:	80 91 01 01 	lds	r24, 0x0101	; 0x800101 <hour>
+ 166:	90 e0       	ldi	r25, 0x00	; 0
+ 168:	0c 2e       	mov	r0, r28
+ 16a:	02 c0       	rjmp	.+4      	; 0x170 <__EEPROM_REGION_LENGTH__+0x70>
+ 16c:	95 95       	asr	r25
+ 16e:	87 95       	ror	r24
+ 170:	0a 94       	dec	r0
+ 172:	e2 f7       	brpl	.-8      	; 0x16c <__EEPROM_REGION_LENGTH__+0x6c>
+ 174:	fb 01       	movw	r30, r22
+ 176:	80 ff       	sbrs	r24, 0
+ 178:	1e c0       	rjmp	.+60     	; 0x1b6 <__EEPROM_REGION_LENGTH__+0xb6>
+ 17a:	e0 80       	ld	r14, Z
+ 17c:	cd 01       	movw	r24, r26
+ 17e:	01 c0       	rjmp	.+2      	; 0x182 <__EEPROM_REGION_LENGTH__+0x82>
+ 180:	88 0f       	add	r24, r24
+ 182:	5a 95       	dec	r21
+ 184:	ea f7       	brpl	.-6      	; 0x180 <__EEPROM_REGION_LENGTH__+0x80>
+ 186:	8e 29       	or	r24, r14
+ 188:	80 83       	st	Z, r24
+ 18a:	21 96       	adiw	r28, 0x01	; 1
+ 18c:	2d 5f       	subi	r18, 0xFD	; 253
+ 18e:	3f 4f       	sbci	r19, 0xFF	; 255
+ 190:	4f 4f       	sbci	r20, 0xFF	; 255
+ 192:	c5 30       	cpi	r28, 0x05	; 5
+ 194:	d1 05       	cpc	r29, r1
+ 196:	09 f4       	brne	.+2      	; 0x19a <__EEPROM_REGION_LENGTH__+0x9a>
+ 198:	8b cf       	rjmp	.-234    	; 0xb0 <main+0x24>
+ 19a:	f9 01       	movw	r30, r18
+ 19c:	54 2f       	mov	r21, r20
+ 19e:	51 d0       	rcall	.+162    	; 0x242 <__xload_2>
+ 1a0:	69 01       	movw	r12, r18
+ 1a2:	e4 2e       	mov	r14, r20
+ 1a4:	f2 e0       	ldi	r31, 0x02	; 2
+ 1a6:	cf 0e       	add	r12, r31
+ 1a8:	d1 1c       	adc	r13, r1
+ 1aa:	e1 1c       	adc	r14, r1
+ 1ac:	f6 01       	movw	r30, r12
+ 1ae:	54 91       	lpm	r21, Z
+ 1b0:	e7 fc       	sbrc	r14, 7
+ 1b2:	50 81       	ld	r21, Z
+ 1b4:	d6 cf       	rjmp	.-84     	; 0x162 <__EEPROM_REGION_LENGTH__+0x62>
  1b6:	90 81       	ld	r25, Z
  1b8:	fd 01       	movw	r30, r26
  1ba:	01 c0       	rjmp	.+2      	; 0x1be <__EEPROM_REGION_LENGTH__+0xbe>
@@ -297,7 +297,7 @@ Disassembly of section .text.startup.main:
  1c6:	89 23       	and	r24, r25
  1c8:	fb 01       	movw	r30, r22
  1ca:	80 83       	st	Z, r24
- 1cc:	d3 cf       	rjmp	.-90     	; 0x174 <__EEPROM_REGION_LENGTH__+0x74>
+ 1cc:	de cf       	rjmp	.-68     	; 0x18a <__EEPROM_REGION_LENGTH__+0x8a>
 
 Disassembly of section .text.__vector_1:
 
@@ -307,82 +307,77 @@ Disassembly of section .text.__vector_1:
  1d2:	1f 92       	push	r1
  1d4:	11 24       	eor	r1, r1
  1d6:	8f 93       	push	r24
- 1d8:	9f 93       	push	r25
- 1da:	87 ea       	ldi	r24, 0xA7	; 167
- 1dc:	91 e6       	ldi	r25, 0x61	; 97
- 1de:	01 97       	sbiw	r24, 0x01	; 1
- 1e0:	f1 f7       	brne	.-4      	; 0x1de <__vector_1+0x10>
- 1e2:	00 c0       	rjmp	.+0      	; 0x1e4 <__vector_1+0x16>
- 1e4:	00 00       	nop
- 1e6:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
- 1ea:	8f 5f       	subi	r24, 0xFF	; 255
- 1ec:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <__DATA_REGION_ORIGIN__>
- 1f0:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
- 1f4:	85 30       	cpi	r24, 0x05	; 5
- 1f6:	31 f0       	breq	.+12     	; 0x204 <__DATA_REGION_LENGTH__+0x4>
- 1f8:	9f 91       	pop	r25
- 1fa:	8f 91       	pop	r24
- 1fc:	1f 90       	pop	r1
- 1fe:	1f be       	out	0x3f, r1	; 63
- 200:	1f 90       	pop	r1
- 202:	18 95       	reti
- 204:	10 92 00 01 	sts	0x0100, r1	; 0x800100 <__DATA_REGION_ORIGIN__>
- 208:	80 91 01 01 	lds	r24, 0x0101	; 0x800101 <hour>
- 20c:	8f 5f       	subi	r24, 0xFF	; 255
- 20e:	80 93 01 01 	sts	0x0101, r24	; 0x800101 <hour>
- 212:	80 91 01 01 	lds	r24, 0x0101	; 0x800101 <hour>
- 216:	8a 30       	cpi	r24, 0x0A	; 10
- 218:	79 f7       	brne	.-34     	; 0x1f8 <__vector_1+0x2a>
- 21a:	10 92 01 01 	sts	0x0101, r1	; 0x800101 <hour>
- 21e:	9f 91       	pop	r25
- 220:	8f 91       	pop	r24
- 222:	1f 90       	pop	r1
- 224:	1f be       	out	0x3f, r1	; 63
- 226:	1f 90       	pop	r1
- 228:	18 95       	reti
+ 1d8:	86 e0       	ldi	r24, 0x06	; 6
+ 1da:	8a 95       	dec	r24
+ 1dc:	f1 f7       	brne	.-4      	; 0x1da <__vector_1+0xc>
+ 1de:	00 c0       	rjmp	.+0      	; 0x1e0 <__vector_1+0x12>
+ 1e0:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
+ 1e4:	8f 5f       	subi	r24, 0xFF	; 255
+ 1e6:	80 93 00 01 	sts	0x0100, r24	; 0x800100 <__DATA_REGION_ORIGIN__>
+ 1ea:	80 91 00 01 	lds	r24, 0x0100	; 0x800100 <__DATA_REGION_ORIGIN__>
+ 1ee:	85 30       	cpi	r24, 0x05	; 5
+ 1f0:	29 f0       	breq	.+10     	; 0x1fc <__vector_1+0x2e>
+ 1f2:	8f 91       	pop	r24
+ 1f4:	1f 90       	pop	r1
+ 1f6:	1f be       	out	0x3f, r1	; 63
+ 1f8:	1f 90       	pop	r1
+ 1fa:	18 95       	reti
+ 1fc:	10 92 00 01 	sts	0x0100, r1	; 0x800100 <__DATA_REGION_ORIGIN__>
+ 200:	80 91 01 01 	lds	r24, 0x0101	; 0x800101 <hour>
+ 204:	8f 5f       	subi	r24, 0xFF	; 255
+ 206:	80 93 01 01 	sts	0x0101, r24	; 0x800101 <hour>
+ 20a:	80 91 01 01 	lds	r24, 0x0101	; 0x800101 <hour>
+ 20e:	8a 30       	cpi	r24, 0x0A	; 10
+ 210:	81 f7       	brne	.-32     	; 0x1f2 <__vector_1+0x24>
+ 212:	10 92 01 01 	sts	0x0101, r1	; 0x800101 <hour>
+ 216:	8f 91       	pop	r24
+ 218:	1f 90       	pop	r1
+ 21a:	1f be       	out	0x3f, r1	; 63
+ 21c:	1f 90       	pop	r1
+ 21e:	18 95       	reti
 
 Disassembly of section .text.libgcc:
 
-0000024b <__xload_2-0x1>:
+00000241 <__xload_2-0x1>:
 	...
 
-0000024c <__xload_2>:
- 24c:	57 fd       	sbrc	r21, 7
- 24e:	03 c0       	rjmp	.+6      	; 0x256 <__xload_2+0xa>
- 250:	65 91       	lpm	r22, Z+
- 252:	75 91       	lpm	r23, Z+
- 254:	08 95       	ret
- 256:	61 91       	ld	r22, Z+
- 258:	71 91       	ld	r23, Z+
- 25a:	08 95       	ret
+00000242 <__xload_2>:
+ 242:	57 fd       	sbrc	r21, 7
+ 244:	03 c0       	rjmp	.+6      	; 0x24c <__xload_2+0xa>
+ 246:	65 91       	lpm	r22, Z+
+ 248:	75 91       	lpm	r23, Z+
+ 24a:	08 95       	ret
+ 24c:	61 91       	ld	r22, Z+
+ 24e:	71 91       	ld	r23, Z+
+ 250:	08 95       	ret
 
 Disassembly of section .text.__dummy_fini:
 
-0000025c <_fini>:
- 25c:	08 95       	ret
+00000252 <_fini>:
+ 252:	08 95       	ret
 
 Disassembly of section .text.__dummy_funcs_on_exit:
 
-0000025e <__funcs_on_exit>:
- 25e:	08 95       	ret
+00000254 <__funcs_on_exit>:
+ 254:	08 95       	ret
 
 Disassembly of section .text.__dummy_simulator_exit:
 
-00000260 <__simulator_exit>:
- 260:	08 95       	ret
+00000256 <__simulator_exit>:
+ 256:	08 95       	ret
 
 Disassembly of section .text.exit:
 
-00000262 <exit>:
- 262:	ec 01       	movw	r28, r24
- 264:	fc df       	rcall	.-8      	; 0x25e <__funcs_on_exit>
- 266:	fa df       	rcall	.-12     	; 0x25c <_fini>
- 268:	ce 01       	movw	r24, r28
- 26a:	fa df       	rcall	.-12     	; 0x260 <__simulator_exit>
- 26c:	ce 01       	movw	r24, r28
- 26e:	00 d0       	rcall	.+0      	; 0x270 <_Exit>
+00000258 <exit>:
+ 258:	ec 01       	movw	r28, r24
+ 25a:	fc df       	rcall	.-8      	; 0x254 <__funcs_on_exit>
+ 25c:	fa df       	rcall	.-12     	; 0x252 <_fini>
+ 25e:	ce 01       	movw	r24, r28
+ 260:	fa df       	rcall	.-12     	; 0x256 <__simulator_exit>
+ 262:	ce 01       	movw	r24, r28
+ 264:	00 d0       	rcall	.+0      	; 0x266 <_Exit>
 
 Disassembly of section .text._Exit:
 
-00000270 <_Exit>:
- 270:	0a df       	rcall	.-492    	; 0x86 <_exit>
+00000266 <_Exit>:
+ 266:	0f df       	rcall	.-482    	; 0x86 <_exit>
