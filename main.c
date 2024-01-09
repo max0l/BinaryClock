@@ -18,7 +18,12 @@ volatile uint8_t minute = 0;
 
 //Buttons
 const uint8_t buttons = (1 << PD0) | (1 << PD1) | (1 << PD2); 
+//Buttons Entprellen
 
+volatile uint8_t prell = 0;
+
+
+volatile uint16_t ms = 0;
 
 //LEDS
 typedef struct{
@@ -50,10 +55,6 @@ const size_t numHourLedPins = sizeof(hourLedPins) / sizeof(hourLedPins[0]);
 
 int main(void)
 {
-	//Set AS2 to 1 so TSK1 and TASK2 (external quartz clock)
-	//ASSR |= 0b00100000;
-	
-
 	// Setze alle Pins von Port C als Ausgänge
 	DDRC = 0b00111111;
 	DDRD = 0b11000000;
@@ -68,16 +69,31 @@ int main(void)
 	
 	//Enable Interrupt
 	EIMSK |= (1<<INT0);
+	
+	//TImer Interrupts
+	TCCR0B |= (1<<CS02); //ps = 256
+	OCR0A=128-1;
+	TCCR0A |= (1<<WGM01);
+	TIMSK0 |= (1<<OCIE0A);
+	
+	//Set AS2 to 1 so TSK1 and TASK2 (external quartz clock)
+	ASSR |= 0b00100000;
+	
+	
 	sei();
+
 		
 
 	while (1)
-	{
+	{	
 		_delay_ms(18);
 		PORTC = 0b00000000;
 		PORTD &= buttons; // |= 0b00000111;
 		PORTB = 0;
 		_delay_us(90);
+		if(prell) {
+			prell--;
+		}
 		//Set Minute
 		for (size_t i = 0; i < numMinLedPins; ++i) {
 			if (minute & (1 << i)) {
@@ -100,17 +116,36 @@ int main(void)
 }
 
 
+//Button 1 Interrupt
 ISR(INT0_vect){
-	_delay_us(20);
+	if(prell == 0){
+		prell = 10;
+	} else {
+		return;
+	}
 	minute++;
-	if(minute==5) {
+	if(minute==60) {
 		minute = 0;
 		hour++;
-		if(hour==10) {
+		if(hour==24) {
 			hour = 0;
 		}
 	}
 	
+
+}
+
+//Timer0 Interrupt
+ISR(TIMER0_COMPA_vect) {
+
+	minute++;
+	if(minute>=60) {
+		minute=0;
+		hour++;
+		if(hour>=24) {
+			hour=0;
+		}
+	}
 
 }
 
