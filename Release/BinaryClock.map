@@ -22,6 +22,7 @@ Discarded input sections
                 0x0000000000000000        0x2 main.o
  .progmemx.data.numMinLedPins
                 0x0000000000000000        0x2 main.o
+ .bss.ms        0x0000000000000000        0x2 main.o
  .progmemx.data.buttons
                 0x0000000000000000        0x1 main.o
  .text          0x0000000000000000        0x0 c:/program files/microchip/xc8/v2.36/avr/bin/../lib/gcc/avr/5.4.0/avr4/memx-const\libgcc.a(_copy_data.o)
@@ -468,71 +469,80 @@ LOAD data_init
                 0x000000000000008a                __vector_21
                 0x000000000000008a                __vector_15
                 0x000000000000008a                __vector_8
-                0x000000000000008a                __vector_14
                 0x000000000000008a                __vector_10
                 0x000000000000008a                __vector_16
                 0x000000000000008a                __vector_18
                 0x000000000000008a                __vector_20
 
 .text.startup.main
-                0x000000000000008c      0x142
+                0x000000000000008c      0x178
  .text.startup.main
-                0x000000000000008c      0x142 main.o
+                0x000000000000008c      0x178 main.o
                 0x000000000000008c                main
 
 .text.__vector_1
-                0x00000000000001ce       0x52
+                0x0000000000000204       0x50
  .text.__vector_1
-                0x00000000000001ce       0x52 main.o
-                0x00000000000001ce                __vector_1
+                0x0000000000000204       0x50 main.o
+                0x0000000000000204                __vector_1
+
+.text.__vector_14
+                0x0000000000000254       0x40
+ .text.__vector_14
+                0x0000000000000254       0x40 main.o
+                0x0000000000000254                __vector_14
 
 .progmemx.data.hourLedPins
-                0x0000000000000220        0xf
+                0x0000000000000294        0xf
  .progmemx.data.hourLedPins
-                0x0000000000000220        0xf main.o
-                0x0000000000000220                hourLedPins
+                0x0000000000000294        0xf main.o
+                0x0000000000000294                hourLedPins
 
 .progmemx.data.minLedPins
-                0x000000000000022f       0x12
+                0x00000000000002a3       0x12
  .progmemx.data.minLedPins
-                0x000000000000022f       0x12 main.o
-                0x000000000000022f                minLedPins
+                0x00000000000002a3       0x12 main.o
+                0x00000000000002a3                minLedPins
 
-.text.libgcc    0x0000000000000241       0x11
- *fill*         0x0000000000000241        0x1 
- .text.libgcc   0x0000000000000242       0x10 c:/program files/microchip/xc8/v2.36/avr/bin/../lib/gcc/avr/5.4.0/avr4/memx-const\libgcc.a(_xload_2.o)
-                0x0000000000000242                __xload_2
+.text.libgcc    0x00000000000002b5       0x11
+ *fill*         0x00000000000002b5        0x1 
+ .text.libgcc   0x00000000000002b6       0x10 c:/program files/microchip/xc8/v2.36/avr/bin/../lib/gcc/avr/5.4.0/avr4/memx-const\libgcc.a(_xload_2.o)
+                0x00000000000002b6                __xload_2
 
 .text.__dummy_fini
-                0x0000000000000252        0x2
+                0x00000000000002c6        0x2
  .text.__dummy_fini
-                0x0000000000000252        0x2 c:/program files/microchip/xc8/v2.36/avr/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr4/memx-const\libc.a(exit.o)
-                0x0000000000000252                _fini
+                0x00000000000002c6        0x2 c:/program files/microchip/xc8/v2.36/avr/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr4/memx-const\libc.a(exit.o)
+                0x00000000000002c6                _fini
 
 .text.__dummy_funcs_on_exit
-                0x0000000000000254        0x2
+                0x00000000000002c8        0x2
  .text.__dummy_funcs_on_exit
-                0x0000000000000254        0x2 c:/program files/microchip/xc8/v2.36/avr/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr4/memx-const\libc.a(exit.o)
-                0x0000000000000254                __funcs_on_exit
+                0x00000000000002c8        0x2 c:/program files/microchip/xc8/v2.36/avr/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr4/memx-const\libc.a(exit.o)
+                0x00000000000002c8                __funcs_on_exit
 
 .text.__dummy_simulator_exit
-                0x0000000000000256        0x2
+                0x00000000000002ca        0x2
  .text.__dummy_simulator_exit
-                0x0000000000000256        0x2 c:/program files/microchip/xc8/v2.36/avr/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr4/memx-const\libc.a(exit.o)
-                0x0000000000000256                __simulator_exit
+                0x00000000000002ca        0x2 c:/program files/microchip/xc8/v2.36/avr/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr4/memx-const\libc.a(exit.o)
+                0x00000000000002ca                __simulator_exit
 
-.text.exit      0x0000000000000258        0xe
- .text.exit     0x0000000000000258        0xe c:/program files/microchip/xc8/v2.36/avr/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr4/memx-const\libc.a(exit.o)
-                0x0000000000000258                exit
+.text.exit      0x00000000000002cc        0xe
+ .text.exit     0x00000000000002cc        0xe c:/program files/microchip/xc8/v2.36/avr/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr4/memx-const\libc.a(exit.o)
+                0x00000000000002cc                exit
 
-.text._Exit     0x0000000000000266        0x2
- .text._Exit    0x0000000000000266        0x2 c:/program files/microchip/xc8/v2.36/avr/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr4/memx-const\libc.a(_Exit.o)
-                0x0000000000000266                _Exit
+.text._Exit     0x00000000000002da        0x2
+ .text._Exit    0x00000000000002da        0x2 c:/program files/microchip/xc8/v2.36/avr/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr4/memx-const\libc.a(_Exit.o)
+                0x00000000000002da                _Exit
 
-.bss.minute     0x0000000000800100        0x1
- .bss.minute    0x0000000000800100        0x1 main.o
-                0x0000000000800100                minute
+.bss.prell      0x0000000000800100        0x1
+ .bss.prell     0x0000000000800100        0x1 main.o
+                0x0000000000800100                prell
 
-.bss.hour       0x0000000000800101        0x1
- .bss.hour      0x0000000000800101        0x1 main.o
-                0x0000000000800101                hour
+.bss.minute     0x0000000000800101        0x1
+ .bss.minute    0x0000000000800101        0x1 main.o
+                0x0000000000800101                minute
+
+.bss.hour       0x0000000000800102        0x1
+ .bss.hour      0x0000000000800102        0x1 main.o
+                0x0000000000800102                hour
