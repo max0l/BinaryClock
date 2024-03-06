@@ -7,24 +7,24 @@
 #define F_CPU 1000000UL
 
 #include <avr/io.h>
+#include <stddef.h>
 #include <util/delay.h>
 #include <stdint.h>
 #include <avr/interrupt.h>
 
-#define DEBOUNCE_COUNT 2
+/////////////////////////////////////////////
 // Initialise Hour and Minute counter
 volatile uint8_t hour = 0;
 volatile uint8_t minute = 0;
 
+volatile uint16_t ms = 0;
+/////////////////////////////////////////////
 //Buttons
 const uint8_t buttons = (1 << PD0) | (1 << PD1) | (1 << PD2); 
 //Buttons Entprellen
 
 volatile uint8_t prell = 0;
-
-
-volatile uint16_t ms = 0;
-
+/////////////////////////////////////////////
 //LEDS
 typedef struct{
 	volatile uint8_t* port;
@@ -52,32 +52,41 @@ const Pin hourLedPins[] = {
 };
 
 const size_t numHourLedPins = sizeof(hourLedPins) / sizeof(hourLedPins[0]);
-
+/////////////////////////////////
 int main(void)
 {
-	// Setze alle Pins von Port C als Ausgänge
+	// Setze alle Pins von Port C als Ausgï¿½nge
 	DDRC = 0b00111111;
 	DDRD = 0b11000000;
 	DDRB = 0b00000111;
 	
-	
-	// Aktiviere Pull-Up-Widerstände für die Taster
+	//////////////////////////////////////////////
+	//Buttons
+	// Aktiviere Pull-Up-Widerstï¿½nde fï¿½r die Taster
 	PORTD |= buttons;
 	
 	//Trigger bei IO Chnage bei INT0
 	EICRA |= (1<<ISC01) | (1<<ISC00);
 	
-	//Enable Interrupt
+	//Enable Button1 Interrupt
 	EIMSK |= (1<<INT0);
 	
-	//TImer Interrupts
+	////////////////////////////////////////
+	//Clock
+	
+	//Enable PRT
+	//PRR &= (0<<PRTIM2);
+	
+	//Set AS2 to 1 so TSK1 and TASK2 (external quartz clock)
+	ASSR |= 0b00100000;
+	
+	//Timer Interrupts
 	TCCR0B |= (1<<CS02); //ps = 256
 	OCR0A=128-1;
 	TCCR0A |= (1<<WGM01);
 	TIMSK0 |= (1<<OCIE0A);
 	
-	//Set AS2 to 1 so TSK1 and TASK2 (external quartz clock)
-	ASSR |= 0b00100000;
+
 	
 	
 	sei();
@@ -86,11 +95,11 @@ int main(void)
 
 	while (1)
 	{	
-		_delay_ms(18);
+		_delay_us(16);
 		PORTC = 0b00000000;
 		PORTD &= buttons; // |= 0b00000111;
 		PORTB = 0;
-		_delay_us(90);
+		_delay_ms(16);
 		if(prell) {
 			prell--;
 		}
@@ -110,7 +119,7 @@ int main(void)
 				*(hourLedPins[i].port) &= ~(1 << hourLedPins[i].pin);
 			}
 		}
-
+		
 		
 	}
 }
@@ -118,19 +127,15 @@ int main(void)
 
 //Button 1 Interrupt
 ISR(INT0_vect){
+	minute = 0;
+	hour=0;
 	if(prell == 0){
 		prell = 10;
 	} else {
 		return;
 	}
-	minute++;
-	if(minute==60) {
-		minute = 0;
-		hour++;
-		if(hour==24) {
-			hour = 0;
-		}
-	}
+	minute = 0;
+	hour=0;
 	
 
 }
@@ -159,10 +164,10 @@ void setPins(uint8_t mask)
 	// Erstelle ein Array, das die Reihenfolge der Pins widerspiegelt
 	uint8_t pinOrder[] = {PIND1, PIND4, PIND3, PIND0, PIND2, PIND5};
 	
-	// Gehe durch die Pins in der gewünschten Reihenfolge
+	// Gehe durch die Pins in der gewï¿½nschten Reihenfolge
 	for (int i = 0; i < 6; i++)
 	{
-		if (mask & (1 << i)) // Überprüfe, ob das entsprechende Bit in der Maske gesetzt ist
+		if (mask & (1 << i)) // ï¿½berprï¿½fe, ob das entsprechende Bit in der Maske gesetzt ist
 		{
 			// Setze den Pin auf HIGH
 			PORTD |= (1 << pinOrder[i]);
