@@ -1,16 +1,12 @@
-/*
- * main.c
- *
- * Created: 11/23/2023 10:37:14 AM
- *  Author: maxfe
- */ 
-#define F_CPU 1000000UL
+#define __AVR_ATmega48A__
 
+#define F_CPU 1000000UL
 #include <avr/io.h>
 #include <stddef.h>
 #include <util/delay.h>
 #include <stdint.h>
 #include <avr/interrupt.h>
+#include <avr/portpins.h>
 
 /////////////////////////////////////////////
 // Initialise Hour and Minute counter
@@ -20,6 +16,7 @@ volatile uint8_t minute = 0;
 volatile uint16_t ms = 0;
 /////////////////////////////////////////////
 //Buttons
+
 const uint8_t buttons = (1 << PD0) | (1 << PD1) | (1 << PD2); 
 //Buttons Entprellen
 
@@ -53,16 +50,15 @@ const Pin hourLedPins[] = {
 
 const size_t numHourLedPins = sizeof(hourLedPins) / sizeof(hourLedPins[0]);
 /////////////////////////////////
-int main(void)
-{
-	// Setze alle Pins von Port C als Ausg�nge
+int main() {
+	// Setze alle Pins von Port C als Ausgänge
 	DDRC = 0b00111111;
 	DDRD = 0b11000000;
 	DDRB = 0b00000111;
 	
 	//////////////////////////////////////////////
 	//Buttons
-	// Aktiviere Pull-Up-Widerst�nde f�r die Taster
+	// Aktiviere Pull-Up-Widerstände für die Taster
 	PORTD |= buttons;
 	
 	//Trigger bei IO Chnage bei INT0
@@ -81,10 +77,10 @@ int main(void)
 	ASSR |= 0b00100000;
 	
 	//Timer Interrupts
-	TCCR0B |= (1<<CS02); //ps = 256
-	OCR0A=128-1;
-	TCCR0A |= (1<<WGM01);
-	TIMSK0 |= (1<<OCIE0A);
+	TCCR0B |= (1<<CS02); //this is the prescaler and is set to the value of CS02 which is 256
+	OCR0A = 128-1; // this is the value that the timer counts to
+	TCCR0A |= (1<<WGM01); //enable CTC -> Timer wird zurückgesetzt wenn OCR0A erreicht wird
+	TIMSK0 |= (1<<OCIE0A); //enable compare Interrupt 1A (of OCR0A)
 	
 
 	
@@ -95,7 +91,7 @@ int main(void)
 
 	while (1)
 	{	
-		_delay_us(16);
+		_delay_us(4);
 		PORTC = 0b00000000;
 		PORTD &= buttons; // |= 0b00000111;
 		PORTB = 0;
