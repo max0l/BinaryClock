@@ -1,4 +1,4 @@
-#define __AVR_ATmega48A__
+#define __AVR_ATmega48a__
 
 #define F_CPU 1000000UL
 #include <avr/io.h>
@@ -74,13 +74,13 @@ int main() {
 	//PRR &= (0<<PRTIM2);
 	
 	//Set AS2 to 1 so TSK1 and TASK2 (external quartz clock)
-	ASSR |= 0b00100000;
+	ASSR |= (1<<AS2);
 	
 	//Timer Interrupts
-	TCCR0B |= (1<<CS02); //this is the prescaler and is set to the value of CS02 which is 256
-	OCR0A = 128-1; // this is the value that the timer counts to
-	TCCR0A |= (1<<WGM01); //enable CTC -> Timer wird zurückgesetzt wenn OCR0A erreicht wird
-	TIMSK0 |= (1<<OCIE0A); //enable compare Interrupt 1A (of OCR0A)
+	TCCR2B |= (1<<CS02) | (1<<CS20); //this is the prescaler, needs to be set to 128
+	OCR2A = 256-1; // this is the value that the timer counts to
+	TCCR2A |= (1<<WGM01); //enable CTC -> Timer wird zurückgesetzt wenn OCR0A erreicht wird
+	TIMSK2 |= (1<<OCIE2A); //enable compare Interrupt 1A (of OCR0A)
 	
 
 	
@@ -91,32 +91,7 @@ int main() {
 
 	while (1)
 	{	
-		_delay_us(4);
-		PORTC = 0b00000000;
-		PORTD &= buttons; // |= 0b00000111;
-		PORTB = 0;
-		_delay_ms(16);
-		if(prell) {
-			prell--;
-		}
-		//Set Minute
-		for (size_t i = 0; i < numMinLedPins; ++i) {
-			if (minute & (1 << i)) {
-				*(minLedPins[i].port) |= (1 << minLedPins[i].pin);
-				} else {
-				*(minLedPins[i].port) &= ~(1 << minLedPins[i].pin);
-			}
-		}
-		//Set Hour
-		for (size_t i = 0; i < numHourLedPins; ++i) {
-			if (hour & (1 << i)) {
-				*(hourLedPins[i].port) |= (1 << hourLedPins[i].pin);
-				} else {
-				*(hourLedPins[i].port) &= ~(1 << hourLedPins[i].pin);
-			}
-		}
-		
-		
+		asm("nop");		
 	}
 }
 
@@ -137,17 +112,10 @@ ISR(INT0_vect){
 }
 
 //Timer0 Interrupt
-ISR(TIMER0_COMPA_vect) {
-
-	minute++;
-	if(minute>=60) {
-		minute=0;
-		hour++;
-		if(hour>=24) {
-			hour=0;
-		}
-	}
-
+ISR(TIMER2_COMPA_vect) {
+	PORTB |= (1<<PB0);
+	_delay_ms(1);
+	PORTB &= ~(1<<PB0);
 }
 
 
