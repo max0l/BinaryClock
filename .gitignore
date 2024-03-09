@@ -1,0 +1,28 @@
+# Compiled object files
+*.o
+
+# Executable files
+*.elf
+*.hex
+
+# Build output directories
+build/
+dist/
+
+# IDE and editor files
+.vscode/
+.vs/
+*.code-workspace
+*.launch
+*.settings
+
+# Dependency files
+.depend
+
+# Debugging files
+*.dSYM/
+*.debug
+
+# Miscellaneous
+*.bak
+*.swp
