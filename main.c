@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <avr/interrupt.h>
 #include <avr/portpins.h>
+#include <avr/sleep.h>
+#include <stdbool.h>
 
 /////////////////////////////////////////////
 // Initialise Hour and Minute counter
@@ -54,6 +56,13 @@ const size_t numHourLedPins = sizeof(hourLedPins) / sizeof(hourLedPins[0]);
 void displayTime(uint8_t hour, uint8_t minute);
 void setEverythingOff();
 
+//sleep modi bool
+volatile bool sleep = false;
+volatile uint8_t sleepDownTimer = 100;
+
+//Power save
+//There are other registers that could be set to save more power
+
 
 /////////////////////////////////
 int main() {
@@ -89,6 +98,10 @@ int main() {
 	TIMSK2 |= (1<<OCIE2A); //enable compare Interrupt 1A (of OCR0A)
 	
 
+	//Set Sleep mode
+	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+
+
 	
 	
 	sei();
@@ -96,30 +109,31 @@ int main() {
 		
 
 	while (1)
-	{	
-		_delay_ms(18);
-		displayTime(hour, 0);
-		_delay_us(90);
-		setEverythingOff();
-		displayTime(0, minute);
-		_delay_us(90);
-		setEverythingOff();
+	{	//Maybe the check could be improved somehow
+		if(sleep) {
+			sleep_mode();
+		} else {
+			_delay_ms(18);
+			displayTime(hour, 0);
+			setEverythingOff();
+			displayTime(0, minute);
+			setEverythingOff();
+		}
+
 	}
 }
 
 
 //Button 1 Interrupt
 ISR(INT0_vect){
+	//Entprellen
+	/*
+	second = 0;
 	minute = 0;
 	hour=0;
-	if(prell == 0){
-		prell = 10;
-	} else {
-		return;
-	}
-	minute = 0;
-	hour=0;
-	
+	*/
+	//disable Sleep Mode (Power Save)
+	sleep = false;
 
 }
 
@@ -137,9 +151,21 @@ ISR(TIMER2_COMPA_vect) {
 			}
 		}
 	}
+	
+	if(!sleep){
+		sleepDownTimer--;
+		if(sleepDownTimer == 0){
+			sleepDownTimer = 100;
+			sleep = true;
+			
+		}
+	}
+	
+
 }
 
 //Method to let the LEDs display the time
+//this could be more power efficient if each LED is turned on and off individually (and in order)
 void displayTime(uint8_t hour, uint8_t minute){
 	for (size_t i = 0; i < numMinLedPins; i++)
 	{
@@ -167,6 +193,7 @@ void displayTime(uint8_t hour, uint8_t minute){
 }
 
 void setEverythingOff() {
+	_delay_us(90);
 	PORTC &= ~0b00111111;
 	PORTD &= ~0b11000000;
 	PORTB &= ~0b00000111;
