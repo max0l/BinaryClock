@@ -23,8 +23,10 @@ const uint8_t buttons = (1 << PD0) | (1 << PD1) | (1 << PD2);
 //Buttons Entprellen
 
 volatile uint8_t prell = 0;
+volatile uint8_t brightnessLevel = 0; //Helligekeitsstufen
 /////////////////////////////////////////////
 //LEDS
+
 typedef struct{
 	volatile uint8_t* port;
 	uint8_t pin;
@@ -77,10 +79,10 @@ int main() {
 	PORTD |= buttons;
 	
 	//Trigger bei IO Chnage bei INT0
-	EICRA |= (1<<ISC01) | (1<<ISC00);
+	EICRA |= (1<<ISC01) | (1<<ISC00) | (1<<ISC10) | (1<<ISC11); //+Taster 2
 	
 	//Enable Button1 Interrupt
-	EIMSK |= (1<<INT0);
+	EIMSK |= (1<<INT0) | (1<<INT1); // interrupt Taster 2
 	
 	////////////////////////////////////////
 	//Clock
@@ -118,6 +120,7 @@ int main() {
 			setEverythingOff();
 			displayTime(0, minute);
 			setEverythingOff();
+			adjustBrightness(brightnessLevel); //Helligekeit anpassen
 		}
 
 	}
@@ -136,7 +139,20 @@ ISR(INT0_vect){
 	sleep = false;
 
 }
-
+//Button 2
+ISR(INT1_vect) { // Neue ISR für Taster 2 (Stunden und Minuten einstellen)
+    static bool settingHours = true; // Zustand zwischen Stunden und Minuten umschalten
+    if(settingHours) {
+        hour = (hour + 1) % 24;
+    } else {
+        minute = (minute + 1) % 60;
+    }
+    settingHours = !settingHours;
+}
+//Button 3
+ISR(INT2_vect) { // Neue ISR für Taster 3 (Helligkeit anpassen)
+    brightnessLevel = (brightnessLevel + 1) % 4; // 4 Helligkeitsstufen
+}
 //Timer0 Interrupt
 ISR(TIMER2_COMPA_vect) {
 	second++;
