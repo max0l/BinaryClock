@@ -12,8 +12,8 @@
 
 /////////////////////////////////////////////
 // Initialise Hour and Minute counter
-volatile uint8_t hour = 0;
-volatile uint8_t minute = 0;
+volatile uint8_t hour = 23;
+volatile uint8_t minute = 59;
 
 volatile uint16_t second = 0;
 /////////////////////////////////////////////
@@ -59,8 +59,9 @@ void displayTime(uint8_t hour, uint8_t minute);
 void setEverythingOff();
 
 //sleep modi bool
+#define SLEEPDELAY 100
 volatile bool sleep = false;
-volatile uint8_t sleepDownTimer = 100;
+volatile uint8_t sleepDownTimer = SLEEPDELAY;
 
 //Power save
 //There are other registers that could be set to save more power
@@ -70,7 +71,7 @@ volatile uint8_t sleepDownTimer = 100;
 int main() {
 	// Setze alle Pins von Port C als Ausgänge
 	DDRC = 0b00111111;
-	DDRD = 0b11000000;
+	DDRD = 0b11010000;
 	DDRB = 0b00000111;
 	
 	//////////////////////////////////////////////
@@ -116,12 +117,9 @@ int main() {
 			sleep_mode();
 		} else {
 			_delay_ms(18);
-			displayTime(hour, 0);
-			setEverythingOff();
-			displayTime(0, minute);
-			setEverythingOff();
-			adjustBrightness(brightnessLevel); //Helligekeit anpassen
+			displayTime(minute, second);
 		}
+		
 
 	}
 }
@@ -135,8 +133,13 @@ ISR(INT0_vect){
 	minute = 0;
 	hour=0;
 	*/
-	//disable Sleep Mode (Power Save)
-	sleep = false;
+	//switch sleep
+	if(sleep) {
+		sleep = false;
+	} else {
+		sleep = true;
+	}
+	sleepDownTimer = SLEEPDELAY;
 
 }
 //Button 2
@@ -149,10 +152,12 @@ ISR(INT1_vect) { // Neue ISR für Taster 2 (Stunden und Minuten einstellen)
     }
     settingHours = !settingHours;
 }
+/* Das geht nicht, da es kein INT2 gibt. Du musst das über den Pinchange Interrupt machen
 //Button 3
 ISR(INT2_vect) { // Neue ISR für Taster 3 (Helligkeit anpassen)
     brightnessLevel = (brightnessLevel + 1) % 4; // 4 Helligkeitsstufen
 }
+*/
 //Timer0 Interrupt
 ISR(TIMER2_COMPA_vect) {
 	second++;
@@ -167,11 +172,17 @@ ISR(TIMER2_COMPA_vect) {
 			}
 		}
 	}
-	
+	//if portd4 is on
+	if(PIND & (1<<PD4)){
+		PORTD &= ~(1 << PD4);
+	} else {
+		PORTD |= (1 << PD4);
+	}
+
 	if(!sleep){
 		sleepDownTimer--;
 		if(sleepDownTimer == 0){
-			sleepDownTimer = 100;
+			sleepDownTimer = SLEEPDELAY;
 			sleep = true;
 			
 		}
@@ -188,28 +199,25 @@ void displayTime(uint8_t hour, uint8_t minute){
 		if (minute & (1 << i))
 		{
 			*minLedPins[i].port |= (1 << minLedPins[i].pin);
-		}
-		else
-		{
+			_delay_us(15);
 			*minLedPins[i].port &= ~(1 << minLedPins[i].pin);
 		}
 	}
 	
 	for (size_t i = 0; i < numHourLedPins; i++)
 	{
+		
 		if (hour & (1 << i))
 		{
 			*hourLedPins[i].port |= (1 << hourLedPins[i].pin);
-		}
-		else
-		{
+			_delay_us(18);
 			*hourLedPins[i].port &= ~(1 << hourLedPins[i].pin);
 		}
 	}
 }
 
 void setEverythingOff() {
-	_delay_us(90);
+	_delay_us(60);
 	PORTC &= ~0b00111111;
 	PORTD &= ~0b11000000;
 	PORTB &= ~0b00000111;
