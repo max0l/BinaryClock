@@ -1,36 +1,16 @@
-#define __AVR_ATmega48A__
+#include "main.h"
+#include "dcf77.h"
 
-#define F_CPU 1000000UL
-#include <avr/io.h>
-#include <stddef.h>
-#include <util/delay.h>
-#include <stdint.h>
-#include <avr/interrupt.h>
-#include <avr/portpins.h>
-#include <avr/sleep.h>
-#include <stdbool.h>
-
-/////////////////////////////////////////////
-// Initialise Hour and Minute counter
 volatile uint8_t hour = 23;
 volatile uint8_t minute = 59;
 
 volatile uint16_t second = 0;
-/////////////////////////////////////////////
-//Buttons
-
-const uint8_t buttons = (1 << PD0) | (1 << PD1) | (1 << PD2); 
-//Buttons Entprellen
 
 volatile uint8_t prell = 0;
-volatile uint8_t brightnessLevel = 0; //Helligekeitsstufen
-/////////////////////////////////////////////
-//LEDS
+volatile uint8_t brightnessLevel = 0;
 
-typedef struct{
-	volatile uint8_t* port;
-	uint8_t pin;
-} Pin;
+const uint8_t buttons = (1 << PD0) | (1 << PD1) | (1 << PD2); 
+
 const Pin minLedPins[] = {
 	{&PORTB, PB2},
 	{&PORTB, PB1},
@@ -41,7 +21,6 @@ const Pin minLedPins[] = {
 		
 };
 
-const size_t numMinLedPins = sizeof(minLedPins) / sizeof(minLedPins[0]);
 
 const Pin hourLedPins[] = {
 	{&PORTB, PB0},
@@ -52,26 +31,17 @@ const Pin hourLedPins[] = {
 	
 };
 
+const size_t numMinLedPins = sizeof(minLedPins) / sizeof(minLedPins[0]);
 const size_t numHourLedPins = sizeof(hourLedPins) / sizeof(hourLedPins[0]);
 
-// Method Declaration
-void displayTime(uint8_t hour, uint8_t minute);
-void setEverythingOff();
-
-//sleep modi bool
-#define SLEEPDELAY 100
 volatile bool sleep = false;
+volatile bool sleepEnabled = true;
 volatile uint8_t sleepDownTimer = SLEEPDELAY;
 
-//Power save
-//There are other registers that could be set to save more power
-
-
-/////////////////////////////////
 int main() {
 	// Setze alle Pins von Port C als Ausgänge
 	DDRC = 0b00111111;
-	DDRD = 0b11010000;
+	DDRD = 0b11100000;
 	DDRB = 0b00000111;
 	
 	//////////////////////////////////////////////
@@ -80,16 +50,18 @@ int main() {
 	PORTD |= buttons;
 	
 	//Trigger bei IO Chnage bei INT0
-	EICRA |= (1<<ISC01) | (1<<ISC00) | (1<<ISC10) | (1<<ISC11); //+Taster 2
+	EICRA |= (1<<ISC01) | (1<<ISC00); //+Taster 2
 	
 	//Enable Button1 Interrupt
-	EIMSK |= (1<<INT0) | (1<<INT1); // interrupt Taster 2
+	EIMSK |= (1<<INT0);
 	
 	////////////////////////////////////////
 	//Clock
 	
 	//Enable PRT
 	//PRR &= (0<<PRTIM2);
+
+	initDCF77();
 	
 	//Set AS2 to 1 so TSK1 and TASK2 (external quartz clock)
 	ASSR |= (1<<AS2);
@@ -103,9 +75,6 @@ int main() {
 
 	//Set Sleep mode
 	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
-
-
-	
 	
 	sei();
 
@@ -113,11 +82,10 @@ int main() {
 
 	while (1)
 	{	//Maybe the check could be improved somehow
-		if(sleep) {
+		if(sleep && sleepEnabled) {
 			sleep_mode();
 		} else {
-			_delay_ms(18);
-			displayTime(minute, second);
+			displayTime(hour, minute);
 		}
 		
 
@@ -143,6 +111,7 @@ ISR(INT0_vect){
 
 }
 //Button 2
+/*
 ISR(INT1_vect) { // Neue ISR für Taster 2 (Stunden und Minuten einstellen)
     static bool settingHours = true; // Zustand zwischen Stunden und Minuten umschalten
     if(settingHours) {
@@ -152,6 +121,7 @@ ISR(INT1_vect) { // Neue ISR für Taster 2 (Stunden und Minuten einstellen)
     }
     settingHours = !settingHours;
 }
+*/
 /* Das geht nicht, da es kein INT2 gibt. Du musst das über den Pinchange Interrupt machen
 //Button 3
 ISR(INT2_vect) { // Neue ISR für Taster 3 (Helligkeit anpassen)
@@ -173,13 +143,13 @@ ISR(TIMER2_COMPA_vect) {
 		}
 	}
 	//if portd4 is on
-	if(PIND & (1<<PD4)){
-		PORTD &= ~(1 << PD4);
+	if(PIND & (1<<PD5)){
+		PORTD &= ~(1 << PD5);
 	} else {
-		PORTD |= (1 << PD4);
+		PORTD |= (1 << PD5);
 	}
 
-	if(!sleep){
+	if(!sleep && sleepEnabled){
 		sleepDownTimer--;
 		if(sleepDownTimer == 0){
 			sleepDownTimer = SLEEPDELAY;
@@ -194,6 +164,7 @@ ISR(TIMER2_COMPA_vect) {
 //Method to let the LEDs display the time
 //this could be more power efficient if each LED is turned on and off individually (and in order)
 void displayTime(uint8_t hour, uint8_t minute){
+	_delay_ms(18);
 	for (size_t i = 0; i < numMinLedPins; i++)
 	{
 		if (minute & (1 << i))
@@ -214,11 +185,4 @@ void displayTime(uint8_t hour, uint8_t minute){
 			*hourLedPins[i].port &= ~(1 << hourLedPins[i].pin);
 		}
 	}
-}
-
-void setEverythingOff() {
-	_delay_us(60);
-	PORTC &= ~0b00111111;
-	PORTD &= ~0b11000000;
-	PORTB &= ~0b00000111;
 }
