@@ -26,3 +26,6 @@ dist/
 # Miscellaneous
 *.bak
 *.swp
+
+# prettier
+.prettier/

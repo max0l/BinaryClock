@@ -41,7 +41,7 @@ volatile uint8_t sleepDownTimer = SLEEPDELAY;
 int main() {
 	// Setze alle Pins von Port C als Ausgänge
 	DDRC = 0b00111111;
-	DDRD = 0b11100000;
+	DDRD = 0b11110000;
 	DDRB = 0b00000111;
 	
 	//////////////////////////////////////////////
@@ -128,7 +128,7 @@ ISR(INT2_vect) { // Neue ISR für Taster 3 (Helligkeit anpassen)
     brightnessLevel = (brightnessLevel + 1) % 4; // 4 Helligkeitsstufen
 }
 */
-//Timer0 Interrupt
+//Timer2 Interrupt
 ISR(TIMER2_COMPA_vect) {
 	second++;
 	if(second == 60){
@@ -143,11 +143,13 @@ ISR(TIMER2_COMPA_vect) {
 		}
 	}
 	//if portd4 is on
+	/*
 	if(PIND & (1<<PD5)){
 		PORTD &= ~(1 << PD5);
 	} else {
 		PORTD |= (1 << PD5);
 	}
+	*/
 
 	if(!sleep && sleepEnabled){
 		sleepDownTimer--;
