@@ -4,7 +4,7 @@
 volatile uint16_t ms = 0;
 bool transmissionStarted = false;
 bool interpretationFinished = false;
-volatile uint16_t lastMeasurement = 0;
+enum Level currentLevel = LOW;
 volatile uint16_t firstMeasurement = 0;
 volatile uint16_t measurement = 0;
 volatile bool newSignal = false;
@@ -40,111 +40,74 @@ void initDCF77() {
     interpretDcf77Signal();
 }
 
-void waitForLowLevel() {
-    while(!(PIND & (1 << dcfInputPin))) {
-        asm("nop");
-    }
-}
 
 
 void interpretDcf77Signal() {
-    displayTime(37, 63);
-    waitForLowLevel();
+    if(!transmissionStarted) {
+        waitingForLowLevelAndStartSequence();
+    }
+
+
     while(!interpretationFinished) {
-        if(measurement == 0) {
-            
+        if(newSignal == false) {
             continue;
         }
 
-        /*
-        if (measurement > 0 && measurement < 50 && newSignal) {
-            interpretationSuccessful = false;
-            transmissionStarted = false;
-            ms = 0;
-            digit = 0;
-            newSignal = false;
-            //errors++;
-            //displayTime(0, 32);
-        } else */
-        if (measurement >= 70 && measurement <= 150 && transmissionStarted && newSignal) {
+        if (checkMesurement((uint16_t) 50, (uint16_t) 150)) {
             dcfBuffer[digit] = 0;
             digit++;
-            //measurement = 0;
             newSignal = false;
-            //PORTD |= (1 << PD5);
             if(PIND & (1<<PD5)){
                 PORTD &= ~(1 << PD5);
             } else {
                 PORTD |= (1 << PD5);
             }
-            //displayTime(0,4);
         }
 
-        if (measurement > 150 && measurement <= 250 && transmissionStarted && newSignal) {
+        if (checkMesurement((uint16_t) 150, (uint16_t) 250)) {
             dcfBuffer[digit] = 1;
             digit++;
-            //measurement = 0;
             newSignal = false;
-            //PORTD &= ~(1 << PD5);
-            //displayTime(0,4);
         }
 
-        if(digit >= 58) {
+        if(digit == 58) {
             interpretationFinished = true;
-            interpretationSuccessful = true;
             newSignal = false;
             transmissionStarted = false;
-            //displayTime(0, 8);
         }
-        /*
-        if(measurement > 250 && measurement <= 2500 && newSignal) {
-            if(PIND & (1<<PD5)){
-                PORTD &= ~(1 << PD5);
-            } else {
-                PORTD |= (1 << PD5);
-            }
-            if(transmissionStarted && digit >= 58) {
-                interpretationFinished = true;
-                interpretationSuccessful = true;
-                newSignal = false;
-                transmissionStarted = false;
-                continue;
-                //displayTime(0, 8);
-            } else if(!transmissionStarted) {
-     
-                transmissionStarted = true;
-                ms = 0;
-                digit = 0;
-                newSignal = false;
-                continue;
-                //displayTime(0,2);
-            }
-        } else if(measurement >= 2000 && newSignal) {
-            interpretationFinished = true;
-            interpretationSuccessful = false;
-            displayTime(0, 48);
-        }*/
-        /*
-        if((measurement > 10000 && !transmissionStarted) || errors > 10) {
-            displayTime(0, 48);
-            interpretationFinished = true;
-            interpretationSuccessful = false;
-            
-        }
-        */
        
     }
     finitDCF77();
 }
 
+void waitingForLowLevelAndStartSequence() {
+    if(currentLevel != LOW) {
+        switchLevel(LOW);
+    }
+    waitForStartSequence();
+}
+
+void waitForStartSequence() {
+    while(!transmissionStarted) {
+        if(checkMesurement((uint16_t) 1000, (uint16_t) 2000)) {
+            transmissionStarted = true;
+            newSignal = false;
+        }
+    }
+
+}
+
+bool checkMesurement(uint16_t rangeStart, uint16_t rangeEnd) {
+    if(measurement > rangeStart && measurement <= rangeEnd && newSignal) {
+        return true;
+    } else {
+        return false;
+    }
+}
 
 void finitDCF77() {
-    if(interpretationSuccessful) {
-        evaluateDcf77Signal();
-    } else {
-        digit = 0;
-        ms = 0;
-        interpretationFinished = false;
+    evaluateDcf77Signal();
+    if(!interpretationSuccessful) {
         interpretDcf77Signal();
     }
     //disables everything what the dcf77 needs
@@ -156,8 +119,6 @@ void finitDCF77() {
     TCCR0A = 0;
     TIMSK0 = 0;
 
-    
-
     displayTime(48, 63);
     PORTD &= ~(1 << PD5);
     sleepEnabled = true;
@@ -165,55 +126,59 @@ void finitDCF77() {
 
 //Pin 1 Interrupt on change
 ISR(INT1_vect){ 
-    if(!transmissionStarted) {
-        
-        if(lastMeasurement == 0) {
-            PORTD |= (1 << PD5);
-            lastMeasurement = ms;
-        } else {
-            volatile uint16_t currentMs = ms;
-            if(currentMs < lastMeasurement) {
-                currentMs = UINT16_MAX - lastMeasurement + currentMs;
-            }
-            measurement = (currentMs - lastMeasurement);
-            lastMeasurement = 0;
-            newSignal = true; //kann maybe weg
-            if(measurement > 1500) {
-                PORTD &= ~(1 << PD5);
-                transmissionStarted = true;
-                digit = 0;
-                newSignal = false;
-                lastMeasurement = 0;
-                firstMeasurement = ms;
-            }
-        }
-
-    } else {
-        if(firstMeasurement == 0) {
-            firstMeasurement = ms;
-            //displayTime(0, (uint8_t) firstMeasurement);
-            //PORTD |= (1 << PD5);
-        } else {
-            volatile uint16_t currentMs = ms;
-            if(currentMs < firstMeasurement) {
-                currentMs = UINT16_MAX - firstMeasurement + currentMs;
-            }
-            measurement = (currentMs - firstMeasurement);
-            //displayTime((uint8_t) measurement, 0);
-            firstMeasurement = 0;
-            newSignal = true;
-        }
-        //displayTime(0, 1);
-    }
+    takeMeasurement();
 }
 
 
+
+void switchLevel(enum Level wantedLevel) {
+    //disable the interrupt for the dcf77 module
+    EIMSK &= ~(1 << INT1);
+
+    //If the level LOW is wanted, i need to wait for the next HIGH level since
+    //the next mesurement will be taking on falling and then rising edge
+    if(wantedLevel == HIGH) {
+        if(currentLevel != HIGH) {
+            while(!dcfInputPinIsHigh()) {
+                asm("nop");
+            }
+        }
+        currentLevel = HIGH;
+    } else if(wantedLevel == LOW) {
+        if(currentLevel != LOW) {
+            while(dcfInputPinIsHigh()) {
+                asm("nop");
+            }
+        }
+        currentLevel = LOW;
+    }
+    //enable the interrupt for the dcf77 module
+    ms = 0;
+    firstMeasurement = 0;
+    measurement = 0;
+    EIMSK |= (1 << INT1);
+}
+
+bool dcfInputPinIsHigh() {
+    return PIND & (1 << dcfInputPin);
+}
+
+void takeMeasurement() {
+    if(firstMeasurement == 0) {
+        firstMeasurement = ms;
+    } else {
+        volatile uint16_t currentMs = ms;
+        if(currentMs < firstMeasurement) {
+            currentMs = UINT16_MAX - firstMeasurement + currentMs;
+        }
+        measurement = currentMs - firstMeasurement;
+        firstMeasurement = 0;
+        newSignal = true;
+    }
+}
+
 //timer, counts ms
 ISR(TIMER0_COMPA_vect) {
-    //PORTD &= ~(1 << PD5);
-    //PORTD |= (1 << PD5);
-	
-       
     if(ms == UINT16_MAX) {
         ms = 0;
     } else {
@@ -221,21 +186,25 @@ ISR(TIMER0_COMPA_vect) {
     }
 }
 
-void evaluateDcf77Signal() {
+bool evaluateDcf77Signal() {
+    bool signalOk = true;
     uint8_t dcf77Hour = returnValue(29, 35, false);
     uint8_t dcf77Minute = returnValue(21, 28, true);
 
-    if(checkParityBit(dcf77Hour, dcfBuffer[35])) {
+    if(checkParityBit(29,35)) {
         hour = dcf77Hour;
     } else {
-        hour = 4;
+        //hour = 4;
+        signalOk = false;
     }
 
-    if(checkParityBit(dcf77Minute, dcfBuffer[28])) {
+    if(checkParityBit(21,28)) {
         minute = dcf77Minute;
     } else {
-        minute = 4;
+        //minute = 4;
+        signalOk = false;
     }
+    return signalOk;
 }
 
 uint8_t returnValue(uint8_t start, uint8_t end, bool isMinute) {
@@ -261,17 +230,15 @@ uint8_t calculateBitSignificance(uint8_t bit, uint8_t relPos, bool isMinute) {
     return bit * significance[position];
 }
 
-bool checkParityBit(uint8_t value, uint8_t parityBit) {
-    uint8_t parity = 0;
-    for (size_t i = 0; i < 6; i++)
+bool checkParityBit(uint8_t rangeStart, uint8_t rangeEnd) {
+    uint8_t sum = 0;
+    for (size_t i = rangeStart; i < rangeEnd; i++)
     {
-        if(value & (1 << i)) {
-            parity++;
-        }
+        sum += dcfBuffer[i];
     }
-    if(parity % 2 == 0) {
+    if(sum % 2 == 0) {
         return true;
     } else {
-        return true;
+        return false;
     }
 }
