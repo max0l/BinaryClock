@@ -45,7 +45,7 @@ extern const size_t numHourLedPins;
 void displayTime(uint8_t hour, uint8_t minute);
 
 //sleep modi bool
-#define SLEEPDELAY 10
+#define SLEEPDELAY 30
 extern volatile bool sleep;
 extern volatile bool sleepEnabled;
 extern volatile uint8_t sleepDownTimer;
