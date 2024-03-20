@@ -41,7 +41,7 @@ void initDCF77() {
     sei();
     PORTD &= ~(1 << dcfEnablePin);
     interpretDcf77Signal();
-    
+    return;
 }
 
 
@@ -92,8 +92,8 @@ void interpretDcf77Signal() {
     }
     
     PORTD &= ~(1 << PD5);
-    _delay_ms(10000);
     finitDCF77();
+    return;
 }
 
 void waitForStartSequence() {
@@ -142,6 +142,7 @@ void finitDCF77() {
     //displayTime(48, 63);
     PORTD &= ~(1 << PD5);
     sleepEnabled = true;
+    return;
 }
 
 //Pin 1 Interrupt on change
