@@ -43,12 +43,15 @@ void initDCF77() {
 
 
 void interpretDcf77Signal() {
-    if(!transmissionStarted) {
-        waitingForLowLevelAndStartSequence();
-    }
+    //PORTD |= (1 << PD5);
 
-
+    waitingForLowLevelAndStartSequence();
+    //PORTD &= ~(1 << PD5);
+    //PORTD |= (1 << PD5);
+    switchLevel(HIGH);
+    //PORTD &= ~(1 << PD5);
     while(!interpretationFinished) {
+        //PORTD |= (1 << PD5);
         if(newSignal == false) {
             continue;
         }
@@ -56,18 +59,26 @@ void interpretDcf77Signal() {
         if (checkMesurement((uint16_t) 50, (uint16_t) 150)) {
             dcfBuffer[digit] = 0;
             digit++;
-            newSignal = false;
-            if(PIND & (1<<PD5)){
+            
+            if(PIND & (1<<PD5)) {
                 PORTD &= ~(1 << PD5);
             } else {
                 PORTD |= (1 << PD5);
             }
+            
+            
         }
 
         if (checkMesurement((uint16_t) 150, (uint16_t) 250)) {
             dcfBuffer[digit] = 1;
             digit++;
-            newSignal = false;
+            
+            if(PIND & (1<<PD5)) {
+                PORTD &= ~(1 << PD5);
+            } else {
+                PORTD |= (1 << PD5);
+            }
+            
         }
 
         if(digit == 58) {
@@ -75,15 +86,16 @@ void interpretDcf77Signal() {
             newSignal = false;
             transmissionStarted = false;
         }
-       
+        //PORTD &= ~(1 << PD5);
     }
+    
     finitDCF77();
 }
 
 void waitingForLowLevelAndStartSequence() {
-    if(currentLevel != LOW) {
-        switchLevel(LOW);
-    }
+    
+    switchLevel(LOW);
+    
     waitForStartSequence();
 }
 
@@ -91,7 +103,6 @@ void waitForStartSequence() {
     while(!transmissionStarted) {
         if(checkMesurement((uint16_t) 1000, (uint16_t) 2000)) {
             transmissionStarted = true;
-            newSignal = false;
         }
     }
 
@@ -99,6 +110,8 @@ void waitForStartSequence() {
 
 bool checkMesurement(uint16_t rangeStart, uint16_t rangeEnd) {
     if(measurement > rangeStart && measurement <= rangeEnd && newSignal) {
+        measurement = 0;
+        newSignal = false;
         return true;
     } else {
         return false;
@@ -106,8 +119,10 @@ bool checkMesurement(uint16_t rangeStart, uint16_t rangeEnd) {
 }
 
 void finitDCF77() {
-    evaluateDcf77Signal();
-    if(!interpretationSuccessful) {
+    if(!evaluateDcf77Signal()) {
+        digit = 0;
+        interpretationFinished = false;
+        transmissionStarted = false;
         interpretDcf77Signal();
     }
     //disables everything what the dcf77 needs
@@ -133,30 +148,29 @@ ISR(INT1_vect){
 
 void switchLevel(enum Level wantedLevel) {
     //disable the interrupt for the dcf77 module
-    EIMSK &= ~(1 << INT1);
-
     //If the level LOW is wanted, i need to wait for the next HIGH level since
     //the next mesurement will be taking on falling and then rising edge
+    
     if(wantedLevel == HIGH) {
-        if(currentLevel != HIGH) {
-            while(!dcfInputPinIsHigh()) {
-                asm("nop");
-            }
+        
+        while(dcfInputPinIsHigh()) {
+            asm("nop");
         }
+        
         currentLevel = HIGH;
     } else if(wantedLevel == LOW) {
-        if(currentLevel != LOW) {
-            while(dcfInputPinIsHigh()) {
-                asm("nop");
-            }
+        
+        while(!dcfInputPinIsHigh()) {
+            asm("nop");
         }
         currentLevel = LOW;
+        
     }
+    
     //enable the interrupt for the dcf77 module
     ms = 0;
     firstMeasurement = 0;
     measurement = 0;
-    EIMSK |= (1 << INT1);
 }
 
 bool dcfInputPinIsHigh() {
@@ -212,9 +226,7 @@ uint8_t returnValue(uint8_t start, uint8_t end, bool isMinute) {
     for (size_t i = start; i < end; i++)
     {
         value += calculateBitSignificance(dcfBuffer[i], i, isMinute);
-    }
-
-    
+    }    
 
     return value;
 }
