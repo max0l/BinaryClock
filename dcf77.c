@@ -1,12 +1,14 @@
 #include "dcf77.h"
 #include "main.h"
 
-volatile uint16_t ms = 0;
+volatile uint32_t ms = 0;
 bool transmissionStarted = false;
 bool interpretationFinished = false;
-enum Level currentLevel = LOW;
-volatile uint16_t firstMeasurement = 0;
-volatile uint16_t measurement = 0;
+enum Level currentLevel = UNDEFINED;
+volatile uint32_t firstMeasurement = UINT32_MAX;
+volatile uint32_t lastMesurement = 0;
+volatile uint8_t periodCount = 0;
+volatile uint32_t measurement = 0;
 volatile bool newSignal = false;
 uint8_t digit = 0;
 uint8_t dcfBuffer[59] = {0};
@@ -19,7 +21,7 @@ void initDCF77() {
     sleepEnabled = false;
     
     //Set dcf66 Enable pin to low to enable the dcf77 module (deaktiviere Pullup) --> trying to set it as an output pin and low
-    PORTD &= ~(1 << dcfEnablePin);
+    PORTD |= (1 << dcfEnablePin);
 
     PORTD &= ~(1 << dcfInputPin);
     
@@ -37,26 +39,25 @@ void initDCF77() {
 	TIMSK0 |= (1<<OCIE0A); //enable compare Interrupt 0A (of OCR0A)
     displayTime(48, 63);
     sei();
+    PORTD &= ~(1 << dcfEnablePin);
     interpretDcf77Signal();
+    
 }
 
 
 
 void interpretDcf77Signal() {
-    //PORTD |= (1 << PD5);
+    PORTD |= (1 << PD5);
+    
+    waitForStartSequence();
 
-    waitingForLowLevelAndStartSequence();
-    //PORTD &= ~(1 << PD5);
-    //PORTD |= (1 << PD5);
-    switchLevel(HIGH);
-    //PORTD &= ~(1 << PD5);
     while(!interpretationFinished) {
         //PORTD |= (1 << PD5);
         if(newSignal == false) {
             continue;
         }
 
-        if (checkMesurement((uint16_t) 50, (uint16_t) 150)) {
+        if (checkMesurement((uint32_t) 50, (uint32_t) 150)) {
             dcfBuffer[digit] = 0;
             digit++;
             
@@ -69,46 +70,42 @@ void interpretDcf77Signal() {
             
         }
 
-        if (checkMesurement((uint16_t) 150, (uint16_t) 250)) {
+        if (checkMesurement((uint32_t) 150, (uint32_t) 250)) {
             dcfBuffer[digit] = 1;
             digit++;
-            
             if(PIND & (1<<PD5)) {
                 PORTD &= ~(1 << PD5);
             } else {
                 PORTD |= (1 << PD5);
             }
             
+            
         }
 
-        if(digit == 58) {
+        if(digit == 37) {
             interpretationFinished = true;
             newSignal = false;
             transmissionStarted = false;
+
+            continue;
         }
-        //PORTD &= ~(1 << PD5);
     }
     
+    PORTD &= ~(1 << PD5);
+    _delay_ms(10000);
     finitDCF77();
-}
-
-void waitingForLowLevelAndStartSequence() {
-    
-    switchLevel(LOW);
-    
-    waitForStartSequence();
 }
 
 void waitForStartSequence() {
     while(!transmissionStarted) {
-        if(checkMesurement((uint16_t) 1000, (uint16_t) 2000)) {
+        if(checkMesurement((uint32_t) 1500, (uint32_t) 2000)) {
             transmissionStarted = true;
         }
     }
 
 }
 
-bool checkMesurement(uint16_t rangeStart, uint16_t rangeEnd) {
+bool checkMesurement(uint32_t rangeStart, uint32_t rangeEnd) {
     if(measurement > rangeStart && measurement <= rangeEnd && newSignal) {
         measurement = 0;
         newSignal = false;
@@ -119,11 +116,19 @@ bool checkMesurement(uint16_t rangeStart, uint16_t rangeEnd) {
 }
 
 void finitDCF77() {
-    if(!evaluateDcf77Signal()) {
+    if(!evaluateDcf77Signal() && errors <= 2) {
         digit = 0;
         interpretationFinished = false;
         transmissionStarted = false;
+        firstMeasurement = 0;
+        measurement = 0;
+        ms = 0;
+        errors++;
         interpretDcf77Signal();
+    }
+    if(errors > 2) {
+        hour = 4;
+        minute = 4;
     }
     //disables everything what the dcf77 needs
     PORTD |= (1 << dcfEnablePin); //activate pull up
@@ -134,7 +139,7 @@ void finitDCF77() {
     TCCR0A = 0;
     TIMSK0 = 0;
 
-    displayTime(48, 63);
+    //displayTime(48, 63);
     PORTD &= ~(1 << PD5);
     sleepEnabled = true;
 }
@@ -142,58 +147,38 @@ void finitDCF77() {
 //Pin 1 Interrupt on change
 ISR(INT1_vect){ 
     takeMeasurement();
-}
-
-
-
-void switchLevel(enum Level wantedLevel) {
-    //disable the interrupt for the dcf77 module
-    //If the level LOW is wanted, i need to wait for the next HIGH level since
-    //the next mesurement will be taking on falling and then rising edge
-    
-    if(wantedLevel == HIGH) {
-        
-        while(dcfInputPinIsHigh()) {
-            asm("nop");
-        }
-        
-        currentLevel = HIGH;
-    } else if(wantedLevel == LOW) {
-        
-        while(!dcfInputPinIsHigh()) {
-            asm("nop");
-        }
-        currentLevel = LOW;
-        
+    /*
+    if(PIND & (1<<PD5)) {
+        PORTD &= ~(1 << PD5);
+    } else {
+        PORTD |= (1 << PD5);
     }
-    
-    //enable the interrupt for the dcf77 module
-    ms = 0;
-    firstMeasurement = 0;
-    measurement = 0;
-}
-
-bool dcfInputPinIsHigh() {
-    return PIND & (1 << dcfInputPin);
+    */
 }
 
 void takeMeasurement() {
-    if(firstMeasurement == 0) {
-        firstMeasurement = ms;
-    } else {
-        volatile uint16_t currentMs = ms;
-        if(currentMs < firstMeasurement) {
-            currentMs = UINT16_MAX - firstMeasurement + currentMs;
+    if (periodCount < 2) {
+        if (periodCount == 0) {
+            firstMeasurement = ms;
+        } else {
+            lastMesurement = ms;
+            measurement = lastMesurement - firstMeasurement;
+            newSignal = true;
         }
-        measurement = currentMs - firstMeasurement;
-        firstMeasurement = 0;
+        periodCount++;
+    } else {
+        firstMeasurement = lastMesurement;
+        lastMesurement = ms;
+        measurement = lastMesurement - firstMeasurement;
         newSignal = true;
     }
+
+    
 }
 
 //timer, counts ms
 ISR(TIMER0_COMPA_vect) {
-    if(ms == UINT16_MAX) {
+    if(ms == UINT32_MAX) {
         ms = 0;
     } else {
         ms++;
@@ -225,26 +210,20 @@ uint8_t returnValue(uint8_t start, uint8_t end, bool isMinute) {
     uint8_t value = 0;
     for (size_t i = start; i < end; i++)
     {
-        value += calculateBitSignificance(dcfBuffer[i], i, isMinute);
-    }    
+        value += calculateBitSignificance(dcfBuffer[i], i - start);
+    }
 
     return value;
 }
 
-uint8_t calculateBitSignificance(uint8_t bit, uint8_t relPos, bool isMinute) {
-    uint8_t position;
+uint8_t calculateBitSignificance(uint8_t bit, uint8_t relPos) {
     uint8_t significance[] = {1, 2, 4, 8, 10, 20, 40};
-    if(isMinute) {
-        position = relPos - 21;
-    } else {
-        position = relPos - 29;
-    }
-    return bit * significance[position];
+    return bit * significance[relPos];
 }
 
 bool checkParityBit(uint8_t rangeStart, uint8_t rangeEnd) {
     uint8_t sum = 0;
-    for (size_t i = rangeStart; i < rangeEnd; i++)
+    for (size_t i = rangeStart; i <= rangeEnd; i++)
     {
         sum += dcfBuffer[i];
     }
