@@ -25,9 +25,10 @@ bool evaluateDcf77Signal();
 uint8_t returnValue(uint8_t start, uint8_t end, bool isMinute);
 uint8_t calculateBitSignificance(uint8_t bit, uint8_t relPos);
 bool checkParityBit(uint8_t value, uint8_t parityBit);
-void waitForStartSequence();
+bool waitForStartSequence();
 bool checkMesurement(uint32_t rangeStart, uint32_t rangeEnd);
 void takeMeasurement();
+void returnToMain();
 
 enum Level {
     LOW,
