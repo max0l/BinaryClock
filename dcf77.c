@@ -47,9 +47,13 @@ void initDCF77() {
 
 
 void interpretDcf77Signal() {
-    PORTD |= (1 << PD5);
+    //PORTD |= (1 << PD5);
     
-    waitForStartSequence();
+    //If there is no signal at all for 5 seconds, return to main
+    if(!waitForStartSequence()) {
+        returnToMain();
+        return;
+    }
 
     while(!interpretationFinished) {
         //PORTD |= (1 << PD5);
@@ -96,13 +100,24 @@ void interpretDcf77Signal() {
     return;
 }
 
-void waitForStartSequence() {
+bool waitForStartSequence() {
     while(!transmissionStarted) {
         if(checkMesurement((uint32_t) 1500, (uint32_t) 2000)) {
             transmissionStarted = true;
+            return true;
+        }
+        if(ms > 5000 && measurement == 0) {
+            displayTime(2,2);
+            interpretationFinished = true;
+            newSignal = false;
+            transmissionStarted = false;
+            errors = 10;
+            hour = 23;
+            minute = 15;
+            return false;
         }
     }
-
+    return false;
 }
 
 bool checkMesurement(uint32_t rangeStart, uint32_t rangeEnd) {
@@ -126,10 +141,16 @@ void finitDCF77() {
         errors++;
         interpretDcf77Signal();
     }
-    if(errors > 2) {
+    if(errors > 2 && errors < 10) {
         hour = 4;
         minute = 4;
     }
+    returnToMain();
+    return;
+
+}
+
+void returnToMain() {
     //disables everything what the dcf77 needs
     PORTD |= (1 << dcfEnablePin); //activate pull up
     EICRA &= ~((1 << ISC11) | (1 << ISC10)); 
@@ -178,6 +199,7 @@ void takeMeasurement() {
 }
 
 //timer, counts ms
+//TODO: check if i can decrease to uint16_t
 ISR(TIMER0_COMPA_vect) {
     if(ms == UINT32_MAX) {
         ms = 0;
