@@ -6,9 +6,6 @@ volatile uint8_t minute = 0;
 
 volatile uint16_t second = 0;
 
-volatile uint8_t prell = 0;
-volatile uint8_t brightnessLevel = 0;
-
 const uint8_t buttons = (1 << PD0) | (1 << PD1) | (1 << PD2); 
 //Buttons Entprellen
 
@@ -16,11 +13,6 @@ volatile uint8_t prell = 0;
 volatile uint8_t brightnessLevel = 0; //Helligekeitsstufen
 /////////////////////////////////////////////
 //LEDS
-
-typedef struct{
-	volatile uint8_t* port;
-	uint8_t pin;
-} Pin;
 
 const Pin minLedPins[] = {
 	{&PORTB, PB2},
@@ -45,51 +37,16 @@ const Pin hourLedPins[] = {
 const size_t numMinLedPins = sizeof(minLedPins) / sizeof(minLedPins[0]);
 const size_t numHourLedPins = sizeof(hourLedPins) / sizeof(hourLedPins[0]);
 
-// Method Declaration
-void displayTime(uint8_t hour, uint8_t minute);
-void setEverythingOff();
+
 
 //sleep modi bool
-#define SLEEPDELAY 200
 volatile bool sleepEnabled = true;
 volatile uint8_t sleepDownTimer = SLEEPDELAY;
 
-/////////////////////////////////////////////
-//States
-
-enum State {
-    DISPLAY_TIME, //muss noch gemacht werden, aber ist im grunde genommen default
-    SET_HOUR,
-    SET_MINUTE,
-    ADJUST_BRIGHTNESS, 
-    SLEEP_MODE //könnte man drüber nachdenken ob man das braucht
-};
-
-enum State currentState = DISPLAY_TIME;
-void adjustBrightnes(int8_t value);
-void sleepButton();
-void alterMinute(int8_t value);
-void alterHour(int8_t value);
-void custom_delay(uint8_t level);
-
 
 /////////////////////////////////////////////
-//States
-
-enum State {
-    DISPLAY_TIME, //muss noch gemacht werden, aber ist im grunde genommen default
-    SET_HOUR,
-    SET_MINUTE,
-    ADJUST_BRIGHTNESS, 
-    SLEEP_MODE //könnte man drüber nachdenken ob man das braucht
-};
-
+//State
 enum State currentState = DISPLAY_TIME;
-void adjustBrightnes(int8_t value);
-void sleepButton();
-void alterMinute(int8_t value);
-void alterHour(int8_t value);
-void custom_delay(uint8_t level);
 
 //Power save
 //There are other registers that could be set to save more power

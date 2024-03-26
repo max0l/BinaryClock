@@ -43,16 +43,29 @@ extern const size_t numHourLedPins;
 
 // Method Declaration
 void displayTime(uint8_t hour, uint8_t minute);
+void setEverythingOff();
 
 //sleep modi bool
 #define SLEEPDELAY 30
-extern volatile bool sleep;
 extern volatile bool sleepEnabled;
 extern volatile uint8_t sleepDownTimer;
 
-//Power save
-//There are other registers that could be set to save more power
+//Enum State
+enum State {
+    DISPLAY_TIME,
+    SET_HOUR,
+    SET_MINUTE,
+    ADJUST_BRIGHTNESS, 
+    SLEEP_MODE
+};
 
+extern enum State currentState;
+
+void adjustBrightnes(int8_t value);
+void sleepButton();
+void alterMinute(int8_t value);
+void alterHour(int8_t value);
+void custom_delay(uint8_t level);
 
 /////////////////////////////////
 #endif
