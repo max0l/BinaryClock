@@ -12,8 +12,8 @@
 
 /////////////////////////////////////////////
 // Initialise Hour and Minute counter
-volatile uint8_t hour = 23;
-volatile uint8_t minute = 59;
+volatile uint8_t hour = 1;
+volatile uint8_t minute = 1;
 
 volatile uint16_t second = 0;
 /////////////////////////////////////////////
@@ -31,6 +31,7 @@ typedef struct{
 	volatile uint8_t* port;
 	uint8_t pin;
 } Pin;
+
 const Pin minLedPins[] = {
 	{&PORTB, PB2},
 	{&PORTB, PB1},
@@ -59,9 +60,27 @@ void displayTime(uint8_t hour, uint8_t minute);
 void setEverythingOff();
 
 //sleep modi bool
-#define SLEEPDELAY 100
-volatile bool sleep = false;
+#define SLEEPDELAY 200
 volatile uint8_t sleepDownTimer = SLEEPDELAY;
+
+/////////////////////////////////////////////
+//States
+
+enum State {
+    DISPLAY_TIME, //muss noch gemacht werden, aber ist im grunde genommen default
+    SET_HOUR,
+    SET_MINUTE,
+    ADJUST_BRIGHTNESS, 
+    SLEEP_MODE //könnte man drüber nachdenken ob man das braucht
+};
+
+enum State currentState = DISPLAY_TIME;
+void adjustBrightnes(int8_t value);
+void sleepButton();
+void alterMinute(int8_t value);
+void alterHour(int8_t value);
+void custom_delay(uint8_t level);
+
 
 //Power save
 //There are other registers that could be set to save more power
@@ -71,19 +90,24 @@ volatile uint8_t sleepDownTimer = SLEEPDELAY;
 int main() {
 	// Setze alle Pins von Port C als Ausgänge
 	DDRC = 0b00111111;
-	DDRD = 0b11010000;
+	DDRD = 0b11110000;
 	DDRB = 0b00000111;
 	
 	//////////////////////////////////////////////
 	//Buttons
-	// Aktiviere Pull-Up-Widerstände für die Taster
+	// Aktiviere Pull-Down-Widerstände für die Taster
 	PORTD |= buttons;
 	
 	//Trigger bei IO Chnage bei INT0
-	EICRA |= (1<<ISC01) | (1<<ISC00) | (1<<ISC10) | (1<<ISC11); //+Taster 2
+	//EICRA |= (1<<ISC01) | (1<<ISC00) | (1<<ISC10) | (1<<ISC11); //+Taster 2
 	
 	//Enable Button1 Interrupt
-	EIMSK |= (1<<INT0) | (1<<INT1); // interrupt Taster 2
+	//EIMSK |= /*(1<<INT0) |*/ (1<<INT1); // interrupt Taster 2
+
+	//PCINT2
+	PCICR |= (1<<PCIE2);
+	PCMSK2 |= (1<<PCINT16) | (1<<PCINT17) | (1<<PCINT18);
+	
 	
 	////////////////////////////////////////
 	//Clock
@@ -113,51 +137,131 @@ int main() {
 
 	while (1)
 	{	//Maybe the check could be improved somehow
-		if(sleep) {
+		if(currentState == SLEEP_MODE) {
 			sleep_mode();
 		} else {
-			_delay_ms(18);
-			displayTime(minute, second);
+			//_delay_ms(18);
+			if(currentState == DISPLAY_TIME) {
+				displayTime(hour, minute);
+			} else if(currentState == SET_HOUR || currentState == SET_MINUTE) {
+				displayTime(~hour, ~minute);
+			} else if (currentState == ADJUST_BRIGHTNESS) {
+				displayTime(31, 63);
+			}
 		}
 		
 
 	}
 }
 
+ISR(PCINT2_vect) {
+	//Da die dieser Interrupt bei jeder Flanke ausgelöst wird,
+	//Soll der rest erst beim loslassen des Tasters ausgeführt werden
+	if(prell) {
+		prell--;
+		return;
+	}
+	prell = 1;
+
+
+    if (!(PIND & (1 << PD0))) {
+
+    	switch(currentState) {
+			case DISPLAY_TIME:
+			    currentState = SET_HOUR;
+				break;
+			case SET_HOUR:
+				//Ok button -> weiter zur Minute
+				currentState = SET_MINUTE;
+				break;
+			case SET_MINUTE:
+				currentState = DISPLAY_TIME;
+				break;
+			case ADJUST_BRIGHTNESS:
+				currentState = DISPLAY_TIME;
+				break;
+			case SLEEP_MODE:
+				sleepButton();
+				break;
+			default:
+				currentState = SET_HOUR;
+				break;
+		}
+    
+    
+		
+    }
+    if (!(PIND & (1 << PD1))) {
+	   switch(currentState) {
+			case DISPLAY_TIME:
+			    currentState = ADJUST_BRIGHTNESS;
+				break;
+			case SET_HOUR:
+				alterHour(1);
+				break;
+			case SET_MINUTE:
+				alterMinute(1);
+				break;
+			case ADJUST_BRIGHTNESS:
+				adjustBrightnes(1);
+				break;
+			case SLEEP_MODE:
+				sleepButton();
+				break;
+			default:
+				currentState = ADJUST_BRIGHTNESS;
+				break;
+		}
+
+    }
+    //Kann in ISR(INT0_vect) ausgelagert werden
+    if (!(PIND & (1 << PD2))) {
+		//gehe in den Sleep modus/wache auf
+		
+		switch(currentState) {
+			case DISPLAY_TIME:
+				sleepButton();
+				break;
+			case SET_HOUR:
+				//if state = setHour/setMinute -> --
+				alterHour(-1);
+				break;
+			case SET_MINUTE:
+				alterMinute(-1);
+				break;
+			case ADJUST_BRIGHTNESS:
+				adjustBrightnes(-1); //+1
+				break;
+			case SLEEP_MODE:
+				sleepButton();
+				break;
+			default:
+				sleepButton();
+				break;
+		}
+		
+    }
+	
+}
 
 //Button 1 Interrupt
-ISR(INT0_vect){
-	//Entprellen
-	/*
-	second = 0;
-	minute = 0;
-	hour=0;
-	*/
-	//switch sleep
-	if(sleep) {
-		sleep = false;
-	} else {
-		sleep = true;
-	}
-	sleepDownTimer = SLEEPDELAY;
+//ISR(INT0_vect){
+//	//Entprellen
+//	/*
+//	second = 0;
+//	minute = 0;
+//	hour=0;
+//	*/
+//	//switch sleep
+//	if(sleep) {
+//		sleep = false;
+//	} else {
+//		sleep = true;
+//	}
+//	sleepDownTimer = SLEEPDELAY;
+//
+//}
 
-}
-//Button 2
-ISR(INT1_vect) { // Neue ISR für Taster 2 (Stunden und Minuten einstellen)
-    static bool settingHours = true; // Zustand zwischen Stunden und Minuten umschalten
-    if(settingHours) {
-        hour = (hour + 1) % 24;
-    } else {
-        minute = (minute + 1) % 60;
-    }
-    settingHours = !settingHours;
-}
-/* Das geht nicht, da es kein INT2 gibt. Du musst das über den Pinchange Interrupt machen
-//Button 3
-ISR(INT2_vect) { // Neue ISR für Taster 3 (Helligkeit anpassen)
-    brightnessLevel = (brightnessLevel + 1) % 4; // 4 Helligkeitsstufen
-}
-*/
 //Timer0 Interrupt
 ISR(TIMER2_COMPA_vect) {
 	second++;
@@ -172,18 +276,12 @@ ISR(TIMER2_COMPA_vect) {
 			}
 		}
 	}
-	//if portd4 is on
-	if(PIND & (1<<PD4)){
-		PORTD &= ~(1 << PD4);
-	} else {
-		PORTD |= (1 << PD4);
-	}
 
-	if(!sleep){
+	if(currentState != SLEEP_MODE){
 		sleepDownTimer--;
 		if(sleepDownTimer == 0){
 			sleepDownTimer = SLEEPDELAY;
-			sleep = true;
+			currentState = SLEEP_MODE;
 			
 		}
 	}
@@ -191,9 +289,88 @@ ISR(TIMER2_COMPA_vect) {
 
 }
 
+void alterMinute(int8_t value) {
+	if(value<0 && minute == 0){
+		minute = 59;
+		return;
+	}
+	if(value < 0) {
+		minute++;
+		return;
+	}
+	if(value > 0 && minute == 59) {
+		minute = 0;
+		return;
+	}
+	if(value > 0 ) {
+		minute++;
+		return;
+	}
+}
+
+void alterHour(int8_t value) {
+	if(value<0 && hour == 0){
+		hour = 23;
+		return;
+	}
+	if(value < 0) {
+		hour++;
+		return;
+	}
+	if(value > 0 && hour == 23) {
+		hour = 0;
+		return;
+	}
+	if(value > 0) {
+		hour++;
+		return;
+	}
+}
+
+void adjustBrightnes(int8_t value) {
+	if(value < 0 && brightnessLevel == 0) {
+		brightnessLevel = 3;
+		return;
+	}
+	if(value < 0) {
+		brightnessLevel--;
+		return;
+	}
+	if(value > 0 && brightnessLevel == 3) {
+		brightnessLevel = 0;
+		return;
+	}
+	if(value > 0) {
+		brightnessLevel++;
+		return;
+	}
+}
+
+void custom_delay(uint8_t level) {
+    switch(level) {
+        case 0: _delay_ms(25); break;
+        case 1: _delay_ms(15); break;
+        case 2: _delay_ms(10); break;
+		case 3: _delay_ms(5); break;
+		case 4: _delay_ms(2); break;
+        default: _delay_ms(25);
+    }
+}
+
+void sleepButton() {
+	if(currentState == SLEEP_MODE) {
+		currentState = DISPLAY_TIME;
+	} else {
+		currentState = SLEEP_MODE;
+	}
+	sleepDownTimer = SLEEPDELAY;
+
+}
+
 //Method to let the LEDs display the time
 //this could be more power efficient if each LED is turned on and off individually (and in order)
 void displayTime(uint8_t hour, uint8_t minute){
+	custom_delay(brightnessLevel);
 	for (size_t i = 0; i < numMinLedPins; i++)
 	{
 		if (minute & (1 << i))
