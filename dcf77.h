@@ -1,22 +1,21 @@
-#ifndef DCF77_H
-#define DCF77_H
+#pragma once
 #define dcfInputPin PORTD3
 #define dcfEnablePin PORTD4
 #include "main.h"
 
-extern volatile uint32_t ms;
-extern bool transmissionStarted;
-extern bool interpretationFinished;
-extern volatile bool newSignal;
-extern volatile uint32_t firstMeasurement;
-extern volatile uint32_t lastMesurement;
-extern volatile uint32_t measurement;
-extern uint8_t digit;
-extern uint8_t dcfBuffer[59];
-extern enum Level currentLevel;
-extern volatile uint8_t periodCount;
+volatile uint32_t ms;
+bool transmissionStarted;
+bool interpretationFinished;
+volatile bool newSignal;
+volatile uint32_t firstMeasurement;
+volatile uint32_t lastMesurement;
+volatile uint32_t measurement;
+uint8_t digit;
+uint8_t dcfBuffer[59];
+enum Level currentLevel;
+volatile uint8_t periodCount;
 
-extern bool interpretationSuccessful;
+bool interpretationSuccessful;
 
 void initDCF77();
 void finitDCF77();
@@ -35,5 +34,3 @@ enum Level {
     HIGH,
     UNDEFINED
 };
-
-#endif

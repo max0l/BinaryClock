@@ -1,5 +1,4 @@
-#ifndef MAIN_H
-#define MAIN_H
+#pragma once
 #define __AVR_ATmega48A__
 
 #define F_CPU 1000000UL
@@ -20,11 +19,11 @@ extern volatile uint16_t second;
 /////////////////////////////////////////////
 //Buttons
 
-extern const uint8_t buttons; 
+const uint8_t buttons; 
 //Buttons Entprellen
 
-extern volatile uint8_t prell;
-extern volatile uint8_t brightnessLevel; //Helligekeitsstufen
+volatile uint8_t prell;
+volatile uint8_t brightnessLevel; //Helligekeitsstufen
 /////////////////////////////////////////////
 //LEDS
 
@@ -35,11 +34,11 @@ typedef struct{
 
 extern const Pin minLedPins[];
 
-extern const size_t numMinLedPins;
+const size_t numMinLedPins;
 
 extern const Pin hourLedPins[];
 
-extern const size_t numHourLedPins;
+const size_t numHourLedPins;
 
 // Method Declaration
 void displayTime(uint8_t hour, uint8_t minute);
@@ -48,7 +47,7 @@ void setEverythingOff();
 //sleep modi bool
 #define SLEEPDELAY 30
 extern volatile bool sleepEnabled;
-extern volatile uint8_t sleepDownTimer;
+volatile uint8_t sleepDownTimer;
 
 //Enum State
 enum State {
@@ -59,7 +58,7 @@ enum State {
     SLEEP_MODE
 };
 
-extern enum State currentState;
+enum State currentState;
 
 void adjustBrightnes(int8_t value);
 void sleepButton();
@@ -68,4 +67,3 @@ void alterHour(int8_t value);
 void custom_delay(uint8_t level);
 
 /////////////////////////////////
-#endif
