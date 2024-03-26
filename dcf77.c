@@ -112,8 +112,8 @@ bool waitForStartSequence() {
             newSignal = false;
             transmissionStarted = false;
             errors = 10;
-            hour = 23;
-            minute = 15;
+            hour = 0;
+            minute = 0;
             return false;
         }
     }
