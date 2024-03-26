@@ -51,6 +51,9 @@ enum State currentState = DISPLAY_TIME;
 //Power save
 //There are other registers that could be set to save more power
 
+//drift
+negateCounter = 0;
+
 
 /////////////////////////////////
 
@@ -64,6 +67,8 @@ int main() {
 	//Buttons
 	// Aktiviere Pull-Down-Widerstände für die Taster
 	PORTD |= buttons;
+
+	initDCF77();
 	
 	//Trigger bei IO Chnage bei INT0
 	//EICRA |= (1<<ISC01) | (1<<ISC00) | (1<<ISC10) | (1<<ISC11); //+Taster 2
@@ -81,8 +86,6 @@ int main() {
 	
 	//Enable PRT
 	//PRR &= (0<<PRTIM2);
-
-	initDCF77();
 	
 	//Set AS2 to 1 so TSK1 and TASK2 (external quartz clock)
 	ASSR |= (1<<AS2);
@@ -109,15 +112,16 @@ int main() {
 			//_delay_ms(18);
 			if(currentState == DISPLAY_TIME) {
 				displayTime(hour, minute);
-			} else if(currentState == SET_HOUR || currentState == SET_MINUTE) {
-				displayTime(~hour, ~minute);
+			} else if(currentState == SET_HOUR) {
+				displayTime(~hour, minute);
+			} else if (currentState == SET_MINUTE) {
+				displayTime(hour, ~minute);
 			} else if (currentState == ADJUST_BRIGHTNESS) {
 				displayTime(31, 63);
 			}
 		}
-		
-
 	}
+	return 0;
 }
 
 ISR(PCINT2_vect) {
@@ -237,16 +241,23 @@ ISR(TIMER2_COMPA_vect) {
 		if(minute == 60){
 			minute = 0;
 			hour++;
+			negateCounter++;
 			if(hour == 24){
 				hour = 0;
 			}
 		}
 	}
 	//if portd4 is on
-	if(PIND & (1<<PD4)){
-		PORTD &= ~(1 << PD4);
+	if(PIND & (1<<PD5)){
+		PORTD &= ~(1 << PD5);
 	} else {
-		PORTD |= (1 << PD4);
+		PORTD |= (1 << PD5);
+	}
+
+	//Negating Drift
+	if(negateCounter == NEGATEDRIFT){
+		second++;
+		negateCounter = 0;
 	}
 
 	if(currentState != SLEEP_MODE && sleepEnabled){
