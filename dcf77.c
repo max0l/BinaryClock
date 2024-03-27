@@ -4,12 +4,12 @@
 volatile uint32_t ms = 0;
 bool transmissionStarted = false;
 bool interpretationFinished = false;
-enum Level currentLevel = UNDEFINED;
 volatile uint32_t firstMeasurement = UINT32_MAX;
 volatile uint32_t lastMesurement = 0;
 volatile uint8_t periodCount = 0;
 volatile uint32_t measurement = 0;
 volatile bool newSignal = false;
+uint8_t tryCounter = 0;
 uint8_t digit = 0;
 uint8_t dcfBuffer[59] = {0};
 
@@ -20,13 +20,14 @@ bool interpretationSuccessful = false;
 void initDCF77() {
     sleepEnabled = false;
     
-    //Set dcf66 Enable pin to low to enable the dcf77 module (deaktiviere Pullup) --> trying to set it as an output pin and low
+    //Set dcf66 Enable pin to high to disbale the dcf77 module
     PORTD |= (1 << dcfEnablePin);
 
+    //??? Wieso wird hier der Pin auf 0 gesetzt und der pull down deaktiviert?
     PORTD &= ~(1 << dcfInputPin);
     
     //Set the interrupt to trigger on any change
-    EICRA |= (1 << ISC10);
+    EICRA = (1 << ISC10);
     //Enable the interrupt for the dcf77 module
     EIMSK |= (1 << INT1);
     
@@ -39,6 +40,7 @@ void initDCF77() {
 	TIMSK0 |= (1<<OCIE0A); //enable compare Interrupt 0A (of OCR0A)
     displayTime(48, 63);
     sei();
+    //activate the dcf77 module (set to low)
     PORTD &= ~(1 << dcfEnablePin);
     interpretDcf77Signal();
     return;
@@ -47,7 +49,7 @@ void initDCF77() {
 
 
 void interpretDcf77Signal() {
-    PORTD |= (1 << PD5);
+    //PORTD |= (1 << PD5);
     
     //If there is no signal at all for 5 seconds, return to main
     if(!waitForStartSequence()) {
@@ -66,26 +68,24 @@ void interpretDcf77Signal() {
         if (checkMesurement((uint32_t) 50, (uint32_t) 150)) {
             dcfBuffer[digit] = 0;
             digit++;
-            
-            if(PIND & (1<<PD5)) {
-                PORTD &= ~(1 << PD5);
-            } else {
-                PORTD |= (1 << PD5);
-            }
-            
-            
         }
 
         if (checkMesurement((uint32_t) 150, (uint32_t) 250)) {
             dcfBuffer[digit] = 1;
-            digit++;
-            if(PIND & (1<<PD5)) {
-                PORTD &= ~(1 << PD5);
-            } else {
-                PORTD |= (1 << PD5);
-            }
-            
-            
+            digit++;            
+        }
+
+        if (checkMesurement((uint32_t) 0, (uint32_t) 50)) {
+            errors++;
+        }
+
+        if(errors > 5) {
+            interpretationFinished = true;
+            newSignal = false;
+            transmissionStarted = false;
+            hour = 3;
+            minute = 3;
+            continue;
         }
 
         if(digit == 37) {
@@ -108,14 +108,14 @@ bool waitForStartSequence() {
             transmissionStarted = true;
             return true;
         }
-        if(ms > 5000 && measurement == 0) {
+        if(ms > 10000 && measurement == 0) {
             displayTime(2,2);
             interpretationFinished = true;
             newSignal = false;
             transmissionStarted = false;
             errors = 10;
-            hour = 0;
-            minute = 0;
+            hour = 3;
+            minute = 3;
             return false;
         }
     }
@@ -133,17 +133,16 @@ bool checkMesurement(uint32_t rangeStart, uint32_t rangeEnd) {
 }
 
 void finitDCF77() {
-    if(!evaluateDcf77Signal() && errors <= 2) {
+    if(!evaluateDcf77Signal() && tryCounter <= 2) {
         digit = 0;
         interpretationFinished = false;
         transmissionStarted = false;
         firstMeasurement = 0;
         measurement = 0;
         ms = 0;
-        errors++;
+        tryCounter++;
         interpretDcf77Signal();
-    }
-    if(errors > 2 && errors < 10) {
+    } else {
         hour = 4;
         minute = 4;
     }
@@ -171,13 +170,13 @@ void returnToMain() {
 //Pin 1 Interrupt on change
 ISR(INT1_vect){ 
     takeMeasurement();
-    /*
+    
     if(PIND & (1<<PD5)) {
         PORTD &= ~(1 << PD5);
     } else {
         PORTD |= (1 << PD5);
     }
-    */
+    
 }
 
 void takeMeasurement() {
