@@ -7,10 +7,9 @@ volatile uint8_t minute = 1;
 volatile uint16_t second = 0;
 
 const uint8_t buttons = (1 << PD0) | (1 << PD1) | (1 << PD2); 
-//Buttons Entprellen
 
 volatile uint8_t prell = 0;
-volatile uint8_t brightnessLevel = 0; //Helligekeitsstufen
+volatile uint8_t brightnessLevel = 0;
 /////////////////////////////////////////////
 //LEDS
 
