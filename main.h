@@ -21,12 +21,9 @@ extern volatile uint16_t second;
 //Buttons
 
 const uint8_t buttons; 
-//Buttons Entprellen
-
 void checkButtons();
 
 volatile uint8_t prell;
-volatile uint8_t brightnessLevel; //Helligekeitsstufen
 /////////////////////////////////////////////
 //LEDS
 
@@ -43,7 +40,6 @@ extern const Pin hourLedPins[];
 
 const size_t numHourLedPins;
 
-// Method Declaration
 void displayTime(uint8_t hour, uint8_t minute);
 void setEverythingOff();
 
@@ -64,10 +60,12 @@ enum State {
 enum State currentState;
 
 void adjustBrightnes(int8_t value);
+volatile uint8_t brightnessLevel;
 void sleepButton();
 void alterMinute(int8_t value);
 void alterHour(int8_t value);
 void custom_delay(uint8_t level);
+
 
 /////////////////////////////////
 //negate drift: Every 7 Hours add 1 sekond. Since 2 Sekonds is real: 1,9999220 s --> 0,000078s
