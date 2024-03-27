@@ -98,21 +98,29 @@ int main() {
 	sei();
 
 		
-
+	//Main Loop
 	while (1)
 	{	
 		checkButtons();
 		if(currentState == SLEEP_MODE && sleepEnabled) {
 			sleep_mode();
 		} else {
-			if(currentState == DISPLAY_TIME) {
-				displayTime(hour, minute);
-			} else if(currentState == SET_HOUR) {
-				displayTime(hour, 63);
-			} else if (currentState == SET_MINUTE) {
-				displayTime(31, minute);
-			} else if (currentState == ADJUST_BRIGHTNESS) {
-				displayTime(31, 63);
+			switch(currentState) {
+				case DISPLAY_TIME:
+					displayTime(hour, minute);
+					break;
+				case SET_HOUR:
+					displayTime(hour, 63);
+					break;
+				case SET_MINUTE:
+					displayTime(31, minute);
+					break;
+				case ADJUST_BRIGHTNESS:
+					displayTime(31, 63);
+					break;
+				default:
+					displayTime(hour, minute);
+					break;
 			}
 		}
 	}
