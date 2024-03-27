@@ -65,7 +65,7 @@ int main() {
 	// Aktiviere Pull-Down-Widerstände für die Taster
 	PORTD |= buttons;
 
-	//initDCF77();
+	initDCF77();
 
 
 	//Power save
