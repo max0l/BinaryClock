@@ -61,12 +61,12 @@ void interpretDcf77Signal() {
         if(newSignal == false) {
             continue;
         }
-        //receibed a 0
+        //received a 0
         if (checkMesurement((uint32_t) 50, (uint32_t) 150)) {
             dcfBuffer[digit] = 0;
             digit++;
         }
-        //receibed a 1
+        //received a 1
         if (checkMesurement((uint32_t) 150, (uint32_t) 250)) {
             dcfBuffer[digit] = 1;
             digit++;            
