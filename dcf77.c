@@ -47,11 +47,13 @@ void initDCF77() {
 
 
 void interpretDcf77Signal() {
-    //PORTD |= (1 << PD5);
+    PORTD |= (1 << PD5);
     
     //If there is no signal at all for 5 seconds, return to main
     if(!waitForStartSequence()) {
+        
         returnToMain();
+        PORTD &= ~(1 << PD5);
         return;
     }
 

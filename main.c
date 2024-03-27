@@ -52,7 +52,7 @@ enum State currentState = DISPLAY_TIME;
 //There are other registers that could be set to save more power
 
 //drift
-negateCounter = 0;
+volatile uint8_t negateCounter = 0;
 
 
 /////////////////////////////////
@@ -214,24 +214,6 @@ ISR(PCINT2_vect) {
 	
 }
 
-//Button 1 Interrupt
-//ISR(INT0_vect){
-//	//Entprellen
-//	/*
-//	second = 0;
-//	minute = 0;
-//	hour=0;
-//	*/
-//	//switch sleep
-//	if(sleep) {
-//		sleep = false;
-//	} else {
-//		sleep = true;
-//	}
-//	sleepDownTimer = SLEEPDELAY;
-//
-//}
-
 //Timer0 Interrupt
 ISR(TIMER2_COMPA_vect) {
 	second++;
@@ -247,12 +229,13 @@ ISR(TIMER2_COMPA_vect) {
 			}
 		}
 	}
-	//if portd4 is on
+	/* Debugging
 	if(PIND & (1<<PD5)){
 		PORTD &= ~(1 << PD5);
 	} else {
 		PORTD |= (1 << PD5);
 	}
+	*/
 
 	//Negating Drift
 	if(negateCounter == NEGATEDRIFT){
@@ -312,7 +295,7 @@ void alterHour(int8_t value) {
 
 void adjustBrightnes(int8_t value) {
 	if(value < 0 && brightnessLevel == 0) {
-		brightnessLevel = 3;
+		brightnessLevel = 4;
 		return;
 	}
 	if(value < 0) {
