@@ -23,6 +23,8 @@ extern volatile uint16_t second;
 const uint8_t buttons; 
 //Buttons Entprellen
 
+void checkButtons();
+
 volatile uint8_t prell;
 volatile uint8_t brightnessLevel; //Helligekeitsstufen
 /////////////////////////////////////////////

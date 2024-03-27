@@ -1,8 +1,8 @@
 #include "main.h"
 #include "dcf77.h"
 
-volatile uint8_t hour = 0;
-volatile uint8_t minute = 0;
+volatile uint8_t hour = 1;
+volatile uint8_t minute = 1;
 
 volatile uint16_t second = 0;
 
@@ -65,7 +65,7 @@ int main() {
 	// Aktiviere Pull-Down-Widerstände für die Taster
 	PORTD |= buttons;
 
-	initDCF77();
+	//initDCF77();
 
 
 	//Power save
@@ -77,15 +77,15 @@ int main() {
 	power_twi_disable();
 	power_timer1_disable();
 	
-	//Trigger bei IO Chnage bei INT0
-	//EICRA |= (1<<ISC01) | (1<<ISC00) | (1<<ISC10) | (1<<ISC11); //+Taster 2
+	//Trigger bei IO Chnage bei INT0 (rising edge)
+	EICRA |= (1<<ISC01);
 	
 	//Enable Button1 Interrupt
-	//EIMSK |= /*(1<<INT0) |*/ (1<<INT1); // interrupt Taster 2
+	EIMSK |= (1<<INT0); // interrupt Taster 2
 
 	//PCINT2
-	PCICR |= (1<<PCIE2);
-	PCMSK2 |= (1<<PCINT16) | (1<<PCINT17) | (1<<PCINT18);
+	//PCICR |= (1<<PCIE2);
+	//PCMSK2 |= (1<<PCINT16) | (1<<PCINT17);
 	
 	
 	////////////////////////////////////////
@@ -112,7 +112,9 @@ int main() {
 		
 
 	while (1)
-	{	//Maybe the check could be improved somehow
+	{	
+		checkButtons();
+		//Maybe the check could be improved somehow
 		if(currentState == SLEEP_MODE && sleepEnabled) {
 			sleep_mode();
 		} else {
@@ -120,9 +122,9 @@ int main() {
 			if(currentState == DISPLAY_TIME) {
 				displayTime(hour, minute);
 			} else if(currentState == SET_HOUR) {
-				displayTime(hour, 0);
+				displayTime(hour, 63);
 			} else if (currentState == SET_MINUTE) {
-				displayTime(0, minute);
+				displayTime(31, minute);
 			} else if (currentState == ADJUST_BRIGHTNESS) {
 				displayTime(31, 63);
 			}
@@ -131,18 +133,37 @@ int main() {
 	return 0;
 }
 
-ISR(PCINT2_vect) {
-	//Da die dieser Interrupt bei jeder Flanke ausgelöst wird,
-	//Soll der rest erst beim loslassen des Tasters ausgeführt werden
+ISR(INT0_vect) {
+	switch(currentState) {
+	case DISPLAY_TIME:
+		sleepButton();
+		break;
+	case SET_HOUR:
+		//if state = setHour/setMinute -> --
+		alterHour(-1);
+		break;
+	case SET_MINUTE:
+		alterMinute(-1);
+		break;
+	case ADJUST_BRIGHTNESS:
+		adjustBrightnes(-1); //+1
+		break;
+	case SLEEP_MODE:
+		sleepButton();
+		break;
+	default:
+		sleepButton();
+		break;
+	}
+}
 
-	_delay_ms(50);
-
-	//auf loslassen warten
+void checkButtons() {
+	//Entprellen
 	if(prell) {
 		prell--;
 		return;
 	}
-	prell = 1;
+	prell = 7;
 
 
     if (!(PIND & (1 << PD0))) {
@@ -162,7 +183,6 @@ ISR(PCINT2_vect) {
 				currentState = DISPLAY_TIME;
 				break;
 			case SLEEP_MODE:
-				sleepButton();
 				break;
 			default:
 				currentState = SET_HOUR;
@@ -198,32 +218,9 @@ ISR(PCINT2_vect) {
     //Kann in ISR(INT0_vect) ausgelagert werden
     if (!(PIND & (1 << PD2))) {
 		//gehe in den Sleep modus/wache auf
-		
-		switch(currentState) {
-			case DISPLAY_TIME:
-				sleepButton();
-				break;
-			case SET_HOUR:
-				//if state = setHour/setMinute -> --
-				alterHour(-1);
-				break;
-			case SET_MINUTE:
-				alterMinute(-1);
-				break;
-			case ADJUST_BRIGHTNESS:
-				adjustBrightnes(-1); //+1
-				break;
-			case SLEEP_MODE:
-				sleepButton();
-				break;
-			default:
-				sleepButton();
-				break;
-		}
+	
 		
     }
-
-	_delay_ms(50);
 	
 }
 
@@ -256,7 +253,7 @@ ISR(TIMER2_COMPA_vect) {
 		negateCounter = 0;
 	}
 
-	if(currentState != SLEEP_MODE && sleepEnabled){
+	if(currentState == DISPLAY_TIME && sleepEnabled){
 		sleepDownTimer--;
 		if(sleepDownTimer == 0){
 			sleepDownTimer = SLEEPDELAY;
@@ -274,7 +271,7 @@ void alterMinute(int8_t value) {
 		return;
 	}
 	if(value < 0 && minute > 0) {
-		minute++;
+		minute--;
 		return;
 	}
 	if(value > 0 && minute == 59) {
@@ -293,7 +290,7 @@ void alterHour(int8_t value) {
 		return;
 	}
 	if(value < 0 && hour > 0) {
-		hour++;
+		hour--;
 		return;
 	}
 	if(value > 0 && hour == 23) {
