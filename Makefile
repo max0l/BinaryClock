@@ -1,15 +1,14 @@
 TARGET=main
 MCU=atmega48a
-SOURCES=main.c
+SOURCES=main.c dcf77.c
+HEADERS=main.h dcf77.h
 MCU_dude=m48
 
 PROGRAMMER=avrispmkii
-#PROGRAMMER=usbasp
-#auskommentieren für automatische Wahl
+# Uncomment for automatic choice
 #PORT=-P usb
 BAUD=-B125kHz
 
-#Ab hier nichts verändern
 OBJECTS=$(SOURCES:.c=.o)
 CFLAGS=-c -Og 
 LDFLAGS=
@@ -21,28 +20,30 @@ hex: $(TARGET).hex
 eeprom: $(TARGET)_eeprom.hex
 
 $(TARGET).hex: $(TARGET).elf
-	avr-objcopy -O ihex -j .data -j .text $(TARGET).elf $(TARGET).hex
+	avr-objcopy -O ihex -j .data -j .text $< $@
 
 $(TARGET)_eeprom.hex: $(TARGET).elf
-	avr-objcopy -O ihex -j .eeprom --change-section-lma .eeprom=1 $(TARGET).elf $(TARGET)_eeprom.hex
+	avr-objcopy -O ihex -j .eeprom --change-section-lma .eeprom=0 $< $@
 
 $(TARGET).elf: $(OBJECTS)
-	avr-gcc $(LDFLAGS) -mmcu=$(MCU) $(OBJECTS) -o $(TARGET).elf
+	avr-gcc $(LDFLAGS) -mmcu=$(MCU) $^ -o $@
 
-.c.o:
+%.o: %.c $(HEADERS)
 	avr-gcc $(CFLAGS) -mmcu=$(MCU) $< -o $@
 
-size:
+size: 
 	avr-size --mcu=$(MCU) -C $(TARGET).elf
 
 program:
-	avrdude -p$(MCU_dude) $(BAUD) $(PORT) -c$(PROGRAMMER) -Uflash:w:$(TARGET).hex:a
+	avrdude -p$(MCU_dude) $(BAUD) $(PORT) -c$(PROGRAMMER) -U flash:w:$(TARGET).hex:a
 
 clean_tmp:
-	rm -rf *.o
-	rm -rf *.elf
+	rm -f *.o *.elf
 
 clean:
-	rm -rf *.o
-	rm -rf *.elf
-	rm -rf *.hex
+	rm -f *.o *.elf *.hex
+
+new:
+	make clean
+	make
+	make program

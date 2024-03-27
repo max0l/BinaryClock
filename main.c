@@ -1,23 +1,10 @@
-#define __AVR_ATmega48A__
+#include "main.h"
+#include "dcf77.h"
 
-#define F_CPU 1000000UL
-#include <avr/io.h>
-#include <stddef.h>
-#include <util/delay.h>
-#include <stdint.h>
-#include <avr/interrupt.h>
-#include <avr/portpins.h>
-#include <avr/sleep.h>
-#include <stdbool.h>
-
-/////////////////////////////////////////////
-// Initialise Hour and Minute counter
 volatile uint8_t hour = 1;
 volatile uint8_t minute = 1;
 
 volatile uint16_t second = 0;
-/////////////////////////////////////////////
-//Buttons
 
 const uint8_t buttons = (1 << PD0) | (1 << PD1) | (1 << PD2); 
 //Buttons Entprellen
@@ -26,11 +13,6 @@ volatile uint8_t prell = 0;
 volatile uint8_t brightnessLevel = 0; //Helligekeitsstufen
 /////////////////////////////////////////////
 //LEDS
-
-typedef struct{
-	volatile uint8_t* port;
-	uint8_t pin;
-} Pin;
 
 const Pin minLedPins[] = {
 	{&PORTB, PB2},
@@ -42,7 +24,6 @@ const Pin minLedPins[] = {
 		
 };
 
-const size_t numMinLedPins = sizeof(minLedPins) / sizeof(minLedPins[0]);
 
 const Pin hourLedPins[] = {
 	{&PORTB, PB0},
@@ -53,40 +34,26 @@ const Pin hourLedPins[] = {
 	
 };
 
+const size_t numMinLedPins = sizeof(minLedPins) / sizeof(minLedPins[0]);
 const size_t numHourLedPins = sizeof(hourLedPins) / sizeof(hourLedPins[0]);
 
-// Method Declaration
-void displayTime(uint8_t hour, uint8_t minute);
-void setEverythingOff();
+
 
 //sleep modi bool
-#define SLEEPDELAY 200
+volatile bool sleepEnabled = true;
 volatile uint8_t sleepDownTimer = SLEEPDELAY;
 
+
 /////////////////////////////////////////////
-//States
-
-enum State {
-    DISPLAY_TIME, //muss noch gemacht werden, aber ist im grunde genommen default
-    SET_HOUR,
-    SET_MINUTE,
-    ADJUST_BRIGHTNESS, 
-    SLEEP_MODE //könnte man drüber nachdenken ob man das braucht
-};
-
+//State
 enum State currentState = DISPLAY_TIME;
-void adjustBrightnes(int8_t value);
-void sleepButton();
-void alterMinute(int8_t value);
-void alterHour(int8_t value);
-void custom_delay(uint8_t level);
 
-
-//Power save
-//There are other registers that could be set to save more power
+//drift
+volatile uint8_t negateCounter = 0;
 
 
 /////////////////////////////////
+
 int main() {
 	// Setze alle Pins von Port C als Ausgänge
 	DDRC = 0b00111111;
@@ -95,73 +62,94 @@ int main() {
 	
 	//////////////////////////////////////////////
 	//Buttons
-	// Aktiviere Pull-Down-Widerstände für die Taster
+	// activet pull down for buttons
 	PORTD |= buttons;
-	
-	//Trigger bei IO Chnage bei INT0
-	//EICRA |= (1<<ISC01) | (1<<ISC00) | (1<<ISC10) | (1<<ISC11); //+Taster 2
-	
-	//Enable Button1 Interrupt
-	//EIMSK |= /*(1<<INT0) |*/ (1<<INT1); // interrupt Taster 2
 
-	//PCINT2
-	PCICR |= (1<<PCIE2);
-	PCMSK2 |= (1<<PCINT16) | (1<<PCINT17) | (1<<PCINT18);
+	initDCF77();
+
+
+	//Power save
+	power_adc_disable();
+	power_usart0_disable();
+	power_spi_disable();
+	power_twi_disable();
+	power_timer1_disable();
 	
+	//Trigger one IO Chnage on INT0 (falling edge)
+	EICRA |= (1<<ISC01);
+	
+	//Enable Button1 Interrupt INT0
+	EIMSK |= (1<<INT0); 
 	
 	////////////////////////////////////////
 	//Clock
-	
-	//Enable PRT
-	//PRR &= (0<<PRTIM2);
-	
 	//Set AS2 to 1 so TSK1 and TASK2 (external quartz clock)
 	ASSR |= (1<<AS2);
 	
 	//Timer Interrupts
 	TCCR2B |= (1<<CS02) | (1<<CS20); //this is the prescaler, needs to be set to 128
 	OCR2A = 256-1; // this is the value that the timer counts to
-	TCCR2A |= (1<<WGM01); //enable CTC -> Timer wird zurückgesetzt wenn OCR0A erreicht wird
+	TCCR2A |= (1<<WGM01); //enable CTC -> Timer will reset when OCR2A is reached
 	TIMSK2 |= (1<<OCIE2A); //enable compare Interrupt 1A (of OCR0A)
 	
 
 	//Set Sleep mode
 	set_sleep_mode(SLEEP_MODE_PWR_SAVE);
-
-
-	
 	
 	sei();
 
 		
 
 	while (1)
-	{	//Maybe the check could be improved somehow
-		if(currentState == SLEEP_MODE) {
+	{	
+		checkButtons();
+		if(currentState == SLEEP_MODE && sleepEnabled) {
 			sleep_mode();
 		} else {
-			//_delay_ms(18);
 			if(currentState == DISPLAY_TIME) {
 				displayTime(hour, minute);
-			} else if(currentState == SET_HOUR || currentState == SET_MINUTE) {
-				displayTime(~hour, ~minute);
+			} else if(currentState == SET_HOUR) {
+				displayTime(hour, 63);
+			} else if (currentState == SET_MINUTE) {
+				displayTime(31, minute);
 			} else if (currentState == ADJUST_BRIGHTNESS) {
 				displayTime(31, 63);
 			}
 		}
-		
+	}
+	return 0;
+}
 
+ISR(INT0_vect) {
+	switch(currentState) {
+	case DISPLAY_TIME:
+		sleepButton();
+		break;
+	case SET_HOUR:
+		alterHour(-1);
+		break;
+	case SET_MINUTE:
+		alterMinute(-1);
+		break;
+	case ADJUST_BRIGHTNESS:
+		adjustBrightnes(-1);
+		break;
+	case SLEEP_MODE:
+		sleepButton();
+		break;
+	default:
+		sleepButton();
+		break;
 	}
 }
 
-ISR(PCINT2_vect) {
-	//Da die dieser Interrupt bei jeder Flanke ausgelöst wird,
-	//Soll der rest erst beim loslassen des Tasters ausgeführt werden
+void checkButtons() {
+	//debounce
 	if(prell) {
 		prell--;
 		return;
 	}
-	prell = 1;
+	prell = 7;
 
 
     if (!(PIND & (1 << PD0))) {
@@ -171,7 +159,6 @@ ISR(PCINT2_vect) {
 			    currentState = SET_HOUR;
 				break;
 			case SET_HOUR:
-				//Ok button -> weiter zur Minute
 				currentState = SET_MINUTE;
 				break;
 			case SET_MINUTE:
@@ -181,7 +168,6 @@ ISR(PCINT2_vect) {
 				currentState = DISPLAY_TIME;
 				break;
 			case SLEEP_MODE:
-				sleepButton();
 				break;
 			default:
 				currentState = SET_HOUR;
@@ -214,53 +200,8 @@ ISR(PCINT2_vect) {
 		}
 
     }
-    //Kann in ISR(INT0_vect) ausgelagert werden
-    if (!(PIND & (1 << PD2))) {
-		//gehe in den Sleep modus/wache auf
-		
-		switch(currentState) {
-			case DISPLAY_TIME:
-				sleepButton();
-				break;
-			case SET_HOUR:
-				//if state = setHour/setMinute -> --
-				alterHour(-1);
-				break;
-			case SET_MINUTE:
-				alterMinute(-1);
-				break;
-			case ADJUST_BRIGHTNESS:
-				adjustBrightnes(-1); //+1
-				break;
-			case SLEEP_MODE:
-				sleepButton();
-				break;
-			default:
-				sleepButton();
-				break;
-		}
-		
-    }
 	
 }
-
-//Button 1 Interrupt
-//ISR(INT0_vect){
-//	//Entprellen
-//	/*
-//	second = 0;
-//	minute = 0;
-//	hour=0;
-//	*/
-//	//switch sleep
-//	if(sleep) {
-//		sleep = false;
-//	} else {
-//		sleep = true;
-//	}
-//	sleepDownTimer = SLEEPDELAY;
-//
-//}
 
 //Timer0 Interrupt
 ISR(TIMER2_COMPA_vect) {
@@ -271,13 +212,28 @@ ISR(TIMER2_COMPA_vect) {
 		if(minute == 60){
 			minute = 0;
 			hour++;
+			negateCounter++;
 			if(hour == 24){
 				hour = 0;
 			}
 		}
 	}
+	/* Debugging
+	if(PIND & (1<<PD5)){
+		PORTD &= ~(1 << PD5);
+	} else {
+		PORTD |= (1 << PD5);
+	}
+	*/
 
-	if(currentState != SLEEP_MODE){
+	//Negating Drift
+	if(negateCounter == NEGATEDRIFT){
+		second++;
+		negateCounter = 0;
+	}
+
+	//Sleep Mode downcounter
+	if(currentState == DISPLAY_TIME && sleepEnabled){
 		sleepDownTimer--;
 		if(sleepDownTimer == 0){
 			sleepDownTimer = SLEEPDELAY;
@@ -294,15 +250,15 @@ void alterMinute(int8_t value) {
 		minute = 59;
 		return;
 	}
-	if(value < 0) {
-		minute++;
+	if(value < 0 && minute > 0) {
+		minute--;
 		return;
 	}
 	if(value > 0 && minute == 59) {
 		minute = 0;
 		return;
 	}
-	if(value > 0 ) {
+	if(value > 0 && minute < 59) {
 		minute++;
 		return;
 	}
@@ -313,15 +269,15 @@ void alterHour(int8_t value) {
 		hour = 23;
 		return;
 	}
-	if(value < 0) {
-		hour++;
+	if(value < 0 && hour > 0) {
+		hour--;
 		return;
 	}
 	if(value > 0 && hour == 23) {
 		hour = 0;
 		return;
 	}
-	if(value > 0) {
+	if(value > 0 && hour < 23 ) {
 		hour++;
 		return;
 	}
@@ -329,18 +285,18 @@ void alterHour(int8_t value) {
 
 void adjustBrightnes(int8_t value) {
 	if(value < 0 && brightnessLevel == 0) {
-		brightnessLevel = 3;
+		brightnessLevel = 4;
 		return;
 	}
-	if(value < 0) {
+	if(value < 0 && brightnessLevel > 0) {
 		brightnessLevel--;
 		return;
 	}
-	if(value > 0 && brightnessLevel == 3) {
+	if(value > 0 && brightnessLevel == 4) {
 		brightnessLevel = 0;
 		return;
 	}
-	if(value > 0) {
+	if(value > 0 && brightnessLevel < 4) {
 		brightnessLevel++;
 		return;
 	}
@@ -368,7 +324,6 @@ void sleepButton() {
 }
 
 //Method to let the LEDs display the time
-//this could be more power efficient if each LED is turned on and off individually (and in order)
 void displayTime(uint8_t hour, uint8_t minute){
 	custom_delay(brightnessLevel);
 	for (size_t i = 0; i < numMinLedPins; i++)
@@ -391,11 +346,4 @@ void displayTime(uint8_t hour, uint8_t minute){
 			*hourLedPins[i].port &= ~(1 << hourLedPins[i].pin);
 		}
 	}
-}
-
-void setEverythingOff() {
-	_delay_us(60);
-	PORTC &= ~0b00111111;
-	PORTD &= ~0b11000000;
-	PORTB &= ~0b00000111;
 }
