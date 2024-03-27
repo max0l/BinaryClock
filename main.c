@@ -62,45 +62,34 @@ int main() {
 	
 	//////////////////////////////////////////////
 	//Buttons
-	// Aktiviere Pull-Down-Widerstände für die Taster
+	// activet pull down for buttons
 	PORTD |= buttons;
 
 	initDCF77();
 
 
 	//Power save
-	//There are other registers that could be set to save more power
-
 	power_adc_disable();
 	power_usart0_disable();
 	power_spi_disable();
 	power_twi_disable();
 	power_timer1_disable();
 	
-	//Trigger bei IO Chnage bei INT0 (rising edge)
+	//Trigger one IO Chnage on INT0 (falling edge)
 	EICRA |= (1<<ISC01);
 	
-	//Enable Button1 Interrupt
-	EIMSK |= (1<<INT0); // interrupt Taster 2
-
-	//PCINT2
-	//PCICR |= (1<<PCIE2);
-	//PCMSK2 |= (1<<PCINT16) | (1<<PCINT17);
-	
+	//Enable Button1 Interrupt INT0
+	EIMSK |= (1<<INT0); 
 	
 	////////////////////////////////////////
 	//Clock
-	
-	//Enable PRT
-	//PRR &= (0<<PRTIM2);
-	
 	//Set AS2 to 1 so TSK1 and TASK2 (external quartz clock)
 	ASSR |= (1<<AS2);
 	
 	//Timer Interrupts
 	TCCR2B |= (1<<CS02) | (1<<CS20); //this is the prescaler, needs to be set to 128
 	OCR2A = 256-1; // this is the value that the timer counts to
-	TCCR2A |= (1<<WGM01); //enable CTC -> Timer wird zurückgesetzt wenn OCR0A erreicht wird
+	TCCR2A |= (1<<WGM01); //enable CTC -> Timer will reset when OCR2A is reached
 	TIMSK2 |= (1<<OCIE2A); //enable compare Interrupt 1A (of OCR0A)
 	
 
@@ -114,11 +103,9 @@ int main() {
 	while (1)
 	{	
 		checkButtons();
-		//Maybe the check could be improved somehow
 		if(currentState == SLEEP_MODE && sleepEnabled) {
 			sleep_mode();
 		} else {
-			//_delay_ms(18);
 			if(currentState == DISPLAY_TIME) {
 				displayTime(hour, minute);
 			} else if(currentState == SET_HOUR) {
@@ -139,14 +126,13 @@ ISR(INT0_vect) {
 		sleepButton();
 		break;
 	case SET_HOUR:
-		//if state = setHour/setMinute -> --
 		alterHour(-1);
 		break;
 	case SET_MINUTE:
 		alterMinute(-1);
 		break;
 	case ADJUST_BRIGHTNESS:
-		adjustBrightnes(-1); //+1
+		adjustBrightnes(-1);
 		break;
 	case SLEEP_MODE:
 		sleepButton();
@@ -158,7 +144,7 @@ ISR(INT0_vect) {
 }
 
 void checkButtons() {
-	//Entprellen
+	//debounce
 	if(prell) {
 		prell--;
 		return;
@@ -173,7 +159,6 @@ void checkButtons() {
 			    currentState = SET_HOUR;
 				break;
 			case SET_HOUR:
-				//Ok button -> weiter zur Minute
 				currentState = SET_MINUTE;
 				break;
 			case SET_MINUTE:
@@ -215,12 +200,6 @@ void checkButtons() {
 		}
 
     }
-    //Kann in ISR(INT0_vect) ausgelagert werden
-    if (!(PIND & (1 << PD2))) {
-		//gehe in den Sleep modus/wache auf
-	
-		
-    }
 	
 }
 
@@ -253,6 +232,7 @@ ISR(TIMER2_COMPA_vect) {
 		negateCounter = 0;
 	}
 
+	//Sleep Mode downcounter
 	if(currentState == DISPLAY_TIME && sleepEnabled){
 		sleepDownTimer--;
 		if(sleepDownTimer == 0){
@@ -344,7 +324,6 @@ void sleepButton() {
 }
 
 //Method to let the LEDs display the time
-//this could be more power efficient if each LED is turned on and off individually (and in order)
 void displayTime(uint8_t hour, uint8_t minute){
 	custom_delay(brightnessLevel);
 	for (size_t i = 0; i < numMinLedPins; i++)

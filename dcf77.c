@@ -23,7 +23,7 @@ void initDCF77() {
     //Set dcf66 Enable pin to high to disbale the dcf77 module
     PORTD |= (1 << dcfEnablePin);
 
-    //??? Wieso wird hier der Pin auf 0 gesetzt und der pull down deaktiviert?
+    //active pull down for the dcf77
     PORTD |= (1 << dcfInputPin);
     
     //Set the interrupt to trigger on any change
@@ -33,10 +33,9 @@ void initDCF77() {
     
 
     //setup of the timer for the dcf77 module
-    //0 -> 100 ms, 1 -> 200 ms. Need to find good prescaler for ms
-    TCCR0B |= (1<<CS01); //this is the prescaler, needs to be set to 128
+    TCCR0B |= (1<<CS01); //this is the prescaler, needs to be set to 8
 	OCR0A = 125-1; // this is the value that the timer counts to (and then resets to 0)
-	TCCR0A |= (1<<WGM01); //enable CTC -> Timer wird zurückgesetzt wenn OCR0A erreicht wird
+	TCCR0A |= (1<<WGM01); //enable CTC -> Timer will reset when OCR0A is reached
 	TIMSK0 |= (1<<OCIE0A); //enable compare Interrupt 0A (of OCR0A)
     displayTime(48, 63);
     sei();
@@ -49,8 +48,7 @@ void initDCF77() {
 
 
 void interpretDcf77Signal() {
-    //PORTD |= (1 << PD5);
-    
+  
     //If there is no signal at all for 5 seconds, return to main
     if(!waitForStartSequence()) {
         
@@ -60,7 +58,6 @@ void interpretDcf77Signal() {
     }
 
     while(!interpretationFinished) {
-        //PORTD |= (1 << PD5);
         if(newSignal == false) {
             continue;
         }
@@ -75,11 +72,12 @@ void interpretDcf77Signal() {
             digit++;            
         }
 
+        //if a mesurement is in the range of 0 to 50 ms or 2000 to 10000 ms, the signal is not valid
         if (checkMesurement((uint32_t) 0, (uint32_t) 50) || checkMesurement((uint32_t) 2000, (uint32_t) 10000)) {
             errors++;
             newSignal = false;
         }
-        
+
         if(digit == 37 || errors >= 10) {
             interpretationFinished = true;
             newSignal = false;
@@ -192,7 +190,6 @@ void takeMeasurement() {
 }
 
 //timer, counts ms
-//TODO: check if i can decrease to uint16_t
 ISR(TIMER0_COMPA_vect) {
     if(ms == UINT32_MAX) {
         ms = 0;
@@ -209,19 +206,18 @@ bool evaluateDcf77Signal() {
     if(checkParityBit(29,35)) {
         hour = dcf77Hour;
     } else {
-        //hour = 4;
         signalOk = false;
     }
 
     if(checkParityBit(21,28)) {
         minute = dcf77Minute;
     } else {
-        //minute = 4;
         signalOk = false;
     }
     return signalOk;
 }
 
+//Calculates the retrived value from the dcf77 signal
 uint8_t returnValue(uint8_t start, uint8_t end, bool isMinute) {
     uint8_t value = 0;
     for (size_t i = start; i < end; i++)
@@ -232,11 +228,13 @@ uint8_t returnValue(uint8_t start, uint8_t end, bool isMinute) {
     return value;
 }
 
+//Calculates the significance of a bit from the dcf77 signal
 uint8_t calculateBitSignificance(uint8_t bit, uint8_t relPos) {
     uint8_t significance[] = {1, 2, 4, 8, 10, 20, 40};
     return bit * significance[relPos];
 }
 
+//Checks the parity bit of the dcf77 signal
 bool checkParityBit(uint8_t rangeStart, uint8_t rangeEnd) {
     uint8_t sum = 0;
     for (size_t i = rangeStart; i <= rangeEnd; i++)
