@@ -69,5 +69,5 @@ void custom_delay(uint8_t level);
 /////////////////////////////////
 //negate drift: Every 7 Hours add 1 sekond. Since 2 Sekonds is real: 1,9999220 s --> 0,000078s
 //overall drift per our: 0,1404s --> every 7 Hours, add 1 second
-uint8_t negateCounter;
 #define NEGATEDRIFT 7
+volatile uint8_t negateCounter;
