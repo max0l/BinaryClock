@@ -113,9 +113,9 @@ int main() {
 			if(currentState == DISPLAY_TIME) {
 				displayTime(hour, minute);
 			} else if(currentState == SET_HOUR) {
-				displayTime(~hour, minute);
+				displayTime(hour, 0);
 			} else if (currentState == SET_MINUTE) {
-				displayTime(hour, ~minute);
+				displayTime(0, minute);
 			} else if (currentState == ADJUST_BRIGHTNESS) {
 				displayTime(31, 63);
 			}
@@ -127,6 +127,10 @@ int main() {
 ISR(PCINT2_vect) {
 	//Da die dieser Interrupt bei jeder Flanke ausgelöst wird,
 	//Soll der rest erst beim loslassen des Tasters ausgeführt werden
+
+	_delay_ms(50);
+
+	//auf loslassen warten
 	if(prell) {
 		prell--;
 		return;
@@ -211,6 +215,8 @@ ISR(PCINT2_vect) {
 		}
 		
     }
+
+	_delay_ms(50);
 	
 }
 
@@ -260,7 +266,7 @@ void alterMinute(int8_t value) {
 		minute = 59;
 		return;
 	}
-	if(value < 0) {
+	if(value < 0 && minute > 0) {
 		minute++;
 		return;
 	}
@@ -268,7 +274,7 @@ void alterMinute(int8_t value) {
 		minute = 0;
 		return;
 	}
-	if(value > 0 ) {
+	if(value > 0 && minute < 59) {
 		minute++;
 		return;
 	}
@@ -279,7 +285,7 @@ void alterHour(int8_t value) {
 		hour = 23;
 		return;
 	}
-	if(value < 0) {
+	if(value < 0 && hour > 0) {
 		hour++;
 		return;
 	}
@@ -287,7 +293,7 @@ void alterHour(int8_t value) {
 		hour = 0;
 		return;
 	}
-	if(value > 0) {
+	if(value > 0 && hour < 23 ) {
 		hour++;
 		return;
 	}
@@ -298,15 +304,15 @@ void adjustBrightnes(int8_t value) {
 		brightnessLevel = 4;
 		return;
 	}
-	if(value < 0) {
+	if(value < 0 && brightnessLevel > 0) {
 		brightnessLevel--;
 		return;
 	}
-	if(value > 0 && brightnessLevel == 3) {
+	if(value > 0 && brightnessLevel == 4) {
 		brightnessLevel = 0;
 		return;
 	}
-	if(value > 0) {
+	if(value > 0 && brightnessLevel < 4) {
 		brightnessLevel++;
 		return;
 	}

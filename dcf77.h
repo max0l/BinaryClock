@@ -12,8 +12,8 @@ volatile uint32_t lastMesurement;
 volatile uint32_t measurement;
 uint8_t digit;
 uint8_t dcfBuffer[59];
-enum Level currentLevel;
 volatile uint8_t periodCount;
+uint8_t tryCounter;
 
 bool interpretationSuccessful;
 
@@ -28,9 +28,3 @@ bool waitForStartSequence();
 bool checkMesurement(uint32_t rangeStart, uint32_t rangeEnd);
 void takeMeasurement();
 void returnToMain();
-
-enum Level {
-    LOW,
-    HIGH,
-    UNDEFINED
-};
