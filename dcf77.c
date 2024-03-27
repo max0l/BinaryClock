@@ -24,7 +24,7 @@ void initDCF77() {
     PORTD |= (1 << dcfEnablePin);
 
     //??? Wieso wird hier der Pin auf 0 gesetzt und der pull down deaktiviert?
-    PORTD &= ~(1 << dcfInputPin);
+    PORTD |= (1 << dcfInputPin);
     
     //Set the interrupt to trigger on any change
     EICRA = (1 << ISC10);
@@ -75,20 +75,12 @@ void interpretDcf77Signal() {
             digit++;            
         }
 
-        if (checkMesurement((uint32_t) 0, (uint32_t) 50)) {
+        if (checkMesurement((uint32_t) 0, (uint32_t) 50) || checkMesurement((uint32_t) 2000, (uint32_t) 10000)) {
             errors++;
-        }
-
-        if(errors > 5) {
-            interpretationFinished = true;
             newSignal = false;
-            transmissionStarted = false;
-            hour = 3;
-            minute = 3;
-            continue;
         }
-
-        if(digit == 37) {
+        
+        if(digit == 37 || errors >= 10) {
             interpretationFinished = true;
             newSignal = false;
             transmissionStarted = false;
@@ -160,7 +152,7 @@ void returnToMain() {
     TCCR0B = 0;
     TCCR0A = 0;
     TIMSK0 = 0;
-
+    power_timer1_disable();
     //displayTime(48, 63);
     PORTD &= ~(1 << PD5);
     sleepEnabled = true;

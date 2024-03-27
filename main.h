@@ -10,6 +10,7 @@
 #include <avr/portpins.h>
 #include <avr/sleep.h>
 #include <stdbool.h>
+#include <avr/power.h>
 
 /////////////////////////////////////////////
 // Initialise Hour and Minute counter
