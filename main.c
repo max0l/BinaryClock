@@ -48,9 +48,6 @@ volatile uint8_t sleepDownTimer = SLEEPDELAY;
 //State
 enum State currentState = DISPLAY_TIME;
 
-//Power save
-//There are other registers that could be set to save more power
-
 //drift
 volatile uint8_t negateCounter = 0;
 
@@ -69,6 +66,16 @@ int main() {
 	PORTD |= buttons;
 
 	initDCF77();
+
+
+	//Power save
+	//There are other registers that could be set to save more power
+
+	power_adc_disable();
+	power_usart0_disable();
+	power_spi_disable();
+	power_twi_disable();
+	power_timer1_disable();
 	
 	//Trigger bei IO Chnage bei INT0
 	//EICRA |= (1<<ISC01) | (1<<ISC00) | (1<<ISC10) | (1<<ISC11); //+Taster 2
