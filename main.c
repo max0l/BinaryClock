@@ -101,10 +101,11 @@ int main() {
 	//Main Loop
 	while (1)
 	{	
-		checkButtons();
+		
 		if(currentState == SLEEP_MODE && sleepEnabled) {
 			sleep_mode();
 		} else {
+			checkButtons();
 			switch(currentState) {
 				case DISPLAY_TIME:
 					displayTime(hour, minute);
