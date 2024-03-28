@@ -20,7 +20,7 @@ bool interpretationSuccessful;
 void initDCF77();
 void finitDCF77();
 void interpretDcf77Signal();
-bool evaluateDcf77Signal();
+bool signalIsOk();
 uint8_t returnValue(uint8_t start, uint8_t end, bool isMinute);
 uint8_t calculateBitSignificance(uint8_t bit, uint8_t relPos);
 bool checkParityBit(uint8_t value, uint8_t parityBit);
