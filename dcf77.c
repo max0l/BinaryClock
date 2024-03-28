@@ -123,13 +123,14 @@ bool checkMesurement(uint32_t rangeStart, uint32_t rangeEnd) {
 }
 
 void finitDCF77() {
-    if(!evaluateDcf77Signal() && tryCounter <= 2) {
+    if(!signalIsOk() && tryCounter <= 2) {
         digit = 0;
         interpretationFinished = false;
         transmissionStarted = false;
         firstMeasurement = 0;
         measurement = 0;
         ms = 0;
+        errors = 0;
         tryCounter++;
         interpretDcf77Signal();
     }
@@ -199,7 +200,10 @@ ISR(TIMER0_COMPA_vect) {
     }
 }
 
-bool evaluateDcf77Signal() {
+bool signalIsOk() {
+    if(digit < 35) {
+        return false;
+    }
     bool signalOk = true;
     uint8_t dcf77Hour = returnValue(29, 35, false);
     uint8_t dcf77Minute = returnValue(21, 28, true);
